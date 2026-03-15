@@ -1,59 +1,155 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# TutorHUB
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+A full-stack **Tutor Supply & Demand Marketplace Platform** that connects parents seeking tutors with qualified tutors. Manages the complete lifecycle — from tutor requests and matching, to session check-in/check-out with GPS & QR verification, payments via BayarCash FPX, and monthly tutor payouts.
 
-## About Laravel
+## Tech Stack
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+| Layer | Technology |
+|-------|-----------|
+| Backend | Laravel 12 (PHP 8.2+) |
+| Frontend | React 19 + TypeScript + Tailwind CSS 4 |
+| Bridge | Inertia.js 2.0 (server-driven SPA) |
+| Database | MySQL |
+| Auth | Laravel Breeze + custom role middleware |
+| Payment | BayarCash FPX integration |
+| Build | Vite 7 |
+| PWA | Service Worker + Web App Manifest |
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## Features
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+### Role-Based Access
 
-## Learning Laravel
+| Role | Capabilities |
+|------|-------------|
+| **Admin** | Dashboard analytics, tutor verification, commission settings, subject & package management, request matching, session oversight, payment & payout processing, platform settings |
+| **Tutor** | Profile management, accept/reject job offers, session check-in/out (QR + GPS), proof photo uploads, earnings dashboard, view reviews |
+| **Parent** | Manage student profiles, create tutor requests with package selection, track bookings & sessions, pay via BayarCash FPX, leave reviews |
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+### Core Modules
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+- **Tutor Verification** — Admin reviews and approves/rejects tutor applications
+- **Request & Matching** — Parents create requests → Admin matches with suitable tutors → Tutors accept/reject
+- **Package System** — Dynamic packages with subject associations and session bundles
+- **Session Check-In/Out** — QR code + GPS location capture for fraud prevention, with proof photo requirement before check-out
+- **Payment Flow** — Auto-created pending payments → Parent pays via BayarCash FPX → Booking confirmed
+- **Commission & Payouts** — Configurable commission per tutor (default 20%), monthly batch payout processing
+- **Reviews** — 1–5 star ratings with comments, auto-updates tutor average rating
+- **PWA** — Offline support, installable as a mobile app
 
-## Laravel Sponsors
+## Getting Started
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+### Prerequisites
 
-### Premium Partners
+- PHP 8.2+
+- Composer
+- Node.js 18+
+- MySQL
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+### Installation
 
-## Contributing
+```bash
+# Clone the repository
+git clone https://github.com/wafazz/tutor-kita.git
+cd tutor-kita
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+# Install dependencies
+composer install
+npm install --legacy-peer-deps
 
-## Code of Conduct
+# Environment setup
+cp .env.example .env
+php artisan key:generate
+```
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+### Configure `.env`
 
-## Security Vulnerabilities
+```env
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=tutorhub
+DB_USERNAME=root
+DB_PASSWORD=
+```
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+### Database Setup
+
+```bash
+php artisan migrate
+php artisan db:seed
+```
+
+### Run Development Server
+
+```bash
+# Terminal 1 — Laravel
+php artisan serve
+
+# Terminal 2 — Vite (frontend assets)
+npm run dev
+```
+
+Visit `http://localhost:8000`
+
+### Default Accounts
+
+| Role | Email | Password |
+|------|-------|----------|
+| Admin | `admin@tutorhub.my` | `admin123` |
+| Tutor | `tutor@tutorhub.my` | `tutor123` |
+| Parent | `parent@tutorhub.my` | `parent123` |
+
+## Project Structure
+
+```
+app/
+├── Http/Controllers/
+│   ├── Admin/          # 14 controllers (dashboard, tutors, subjects, requests, etc.)
+│   ├── Tutor/          # 7 controllers (profile, jobs, sessions, earnings, etc.)
+│   ├── ParentUser/     # 7 controllers (students, requests, payments, etc.)
+│   └── Auth/           # Registration & login
+├── Models/             # User, TutorProfile, Student, Subject, Package, Booking,
+│                       # TutorRequest, TutorSession, Payment, TutorPayout, Review
+└── Http/Middleware/
+    └── EnsureRole.php  # Role-based access control
+
+resources/js/Pages/
+├── Admin/              # 13 module directories
+├── Tutor/              # 6 module directories
+├── Parent/             # 6 module directories
+├── Auth/               # Login, Register, RegisterParent
+└── Tutors/             # Public tutor browse page
+```
+
+## Database Schema
+
+12 core tables covering the full platform lifecycle:
+
+- `users` — All platform users with role field (admin/tutor/parent)
+- `tutor_profiles` — Verification status, subjects, rates, GPS coordinates, commission rate
+- `students` — Parent's children profiles
+- `subjects` — Available subjects with categories and hourly rates
+- `packages` — Tutoring packages with session bundles (many-to-many with subjects)
+- `tutor_requests` — Parent requests with grouping, matching, and tutor acceptance
+- `bookings` — Confirmed tutor-parent engagements
+- `tutor_sessions` — Individual sessions with QR check-in tokens, GPS, proof photos
+- `payments` — BayarCash FPX transactions with commission breakdown
+- `tutor_payouts` — Monthly payout batch records
+- `reviews` — Star ratings and comments
+- `settings` — Platform configuration key-value store
+
+## Payment Flow
+
+```
+Parent creates request
+    → Admin matches tutor
+        → Tutor accepts offer
+            → Payment record created (pending)
+                → Parent pays via BayarCash FPX
+                    → Booking auto-created on success
+                        → Sessions auto-generated from schedule
+```
 
 ## License
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+All rights reserved.
