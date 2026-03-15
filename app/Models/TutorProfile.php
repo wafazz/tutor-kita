@@ -9,7 +9,7 @@ class TutorProfile extends Model
     protected $fillable = [
         'user_id', 'ic_number', 'subjects', 'education_level', 'experience_years',
         'bio', 'hourly_rate', 'location_area', 'location_state', 'latitude', 'longitude',
-        'availability', 'verification_status', 'verified_at', 'documents', 'rating_avg', 'total_sessions',
+        'availability', 'verification_status', 'verified_at', 'documents', 'rating_avg', 'total_sessions', 'commission_rate',
     ];
 
     protected function casts(): array
@@ -21,6 +21,7 @@ class TutorProfile extends Model
             'verified_at' => 'datetime',
             'hourly_rate' => 'decimal:2',
             'rating_avg' => 'decimal:2',
+            'commission_rate' => 'decimal:2',
         ];
     }
 

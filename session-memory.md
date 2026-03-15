@@ -1,66 +1,66 @@
 # Session Memory - TutorHUB
-> Last updated: 2026-03-13 23:55
+> Last updated: 2026-03-15
 
 ## Session Context
 - **Project**: TutorHUB
 - **Profile**: ~/Desktop/MemoryCore Project/Projects/10-tutorhub.md
-- **Branch**: main (no git init yet)
-- **Status**: active
-- **Focus**: Phase 1 scaffold complete
+- **Branch**: main
+- **Status**: feature-complete + enhancements
+- **Focus**: UI polish, payment flow, packages, proof photos, parent registration
 
 ## Current Tasks
-- [x] Iris init — scaffold project
-- [x] Create Planning.md
-- [x] Laravel install + Breeze (Inertia React TS)
-- [x] Database migrations (13 tables)
-- [x] Eloquent models (11 models)
-- [x] EnsureRole middleware + role routing
-- [x] Seeder (admin + demo data + subjects + settings)
-- [x] Dashboard pages (Admin/Tutor/Parent)
-- [x] Browse Tutors page
-- [x] Smoke test all routes (200 OK)
-- [ ] Phase 2: Matching & Booking
+- [x] Phase 1-5: All complete
+- [x] Admin Settings + HQ Profile
+- [x] ProfileController fix (auth()->user() type hint)
+- [x] Tutor sidebar: Settings → My Profile (link to /tutor/profile)
+- [x] /profile restricted to admin only
+- [x] 403/404/500/503 error page (Inertia)
+- [x] Tutor dashboard commission cards (total/available/paid)
+- [x] All stat cards → gradient backgrounds (admin/tutor/parent)
+- [x] Parent registration page (/register/parent) — shareable URL
+- [x] Admin assign any tutor to any request (search, reassign)
+- [x] Tutor job show page redesign (hero card, icon toggles)
+- [x] Dynamic packages system (admin CRUD, parent selects on request)
+- [x] Payment flow: request → admin assign → parent pay → booking created
+- [x] Proof photos: tutor must upload ≥1 photo before check-out
 
 ## Working Memory
 ### Active Context
 - Stack: Laravel 12 + Inertia + React 19 + TS + Tailwind 4
 - DB: MySQL 3307, database: tutorhub
-- Admin login: admin@tutorhub.my / admin123
-- Tutor login: tutor@tutorhub.my / tutor123
-- Parent login: parent@tutorhub.my / parent123
-- NPM needs --legacy-peer-deps (vite 7 + @types/node conflict)
+- Admin: admin@tutorhub.my / admin123
+- Tutor: tutor@tutorhub.my / tutor123
+- Parent: parent@tutorhub.my / parent123
+- NPM needs --legacy-peer-deps
 
-### Decisions Made
-- tutor_sessions table name (not sessions — conflicts with Laravel): avoids collision
-- Commission model over subscription: lower barrier for tutors
-- QR + GPS for check-in: proven pattern from Kopa Arena
-- Tailwind 4 (from Breeze default): uses @tailwindcss/vite plugin
-
-### Blockers / Open Questions
-- None
-
-## Recent Changes
-| File | Change | Status |
-|---|---|---|
-| .env | Configured MySQL 3307, timezone, app name | done |
-| database/migrations/* | 13 migration files | done |
-| app/Models/* | 11 models with relationships | done |
-| app/Http/Middleware/EnsureRole.php | Role middleware | done |
-| bootstrap/app.php | Registered role alias | done |
-| routes/web.php | 3 role groups + public routes | done |
-| Auth controllers | Role-based redirect + tutor profile creation | done |
-| resources/js/pages/* | 4 dashboard/browse pages | done |
-| database/seeders/DatabaseSeeder.php | Demo data | done |
+### Key Patterns
+- Parent controllers namespace: `ParentUser`
+- MySQL decimals → `Number()` before `.toFixed()` in TS
+- Payment auto-created on admin match (not on check-out anymore for package flow)
+- Reviews auto-update rating_avg on tutor_profiles
+- Settings table for API keys + HQ company info
+- Back buttons: pill style `bg-indigo-50 text-indigo-600`
+- Packages table: name, description, total_sessions, duration_hours, price, is_active, sort_order
+- Payment flow: admin assigns tutor → pending payment auto-created → parent pays via BayarCash → booking auto-created
+- Proof photos stored as JSON array in tutor_sessions, uploaded to storage/proof-photos/{session_id}/
+- Error pages: bootstrap/app.php exceptions->respond() renders Inertia Error page
+- /profile route restricted to admin via role:admin middleware
+- /register/parent — public shareable parent registration
 
 ## Session Recap
 ### What Was Done
-- Full Iris init: scaffold, migrations, models, middleware, routing, seeder, dashboard pages
-- All public routes verified returning 200
+- Fixed ProfileController type hint for auth()->user()
+- Tutor sidebar: changed Settings to My Profile with /tutor/profile URL
+- Restricted /profile to admin only
+- Created 403/404/500/503 error pages with Inertia
+- Added commission cards to tutor dashboard (total/available/paid)
+- Converted all stat cards to gradient backgrounds across all 3 dashboards
+- Created parent registration page at /register/parent (shareable URL, split-screen design)
+- Admin can now assign any verified tutor to any request with search
+- Redesigned tutor job show page with hero card, icon location toggles
+- Built dynamic packages system (admin CRUD + parent selection on request)
+- Implemented full payment flow: admin assigns → payment auto-created → parent pays → booking auto-created
+- Added proof photo upload requirement before tutor check-out
 
 ### Where We Left Off
-- Phase 1 complete. Ready for Phase 2 (Matching & Booking)
-
-### Key Context for Next Session
-- npm install needs --legacy-peer-deps flag
-- No git repo initialized yet
-- Planning.md has full phase breakdown and route plan
+- All features working. Payment flow with BayarCash FPX integrated (fallback to manual if API not configured).

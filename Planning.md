@@ -53,41 +53,41 @@
 
 ### Phase 1 — Foundation (MVP)
 - [x] Laravel scaffold + auth (Breeze)
-- [ ] Role-based middleware & redirects
-- [ ] Admin dashboard (stats overview)
-- [ ] Tutor registration + profile management
-- [ ] Tutor verification (admin approves/rejects)
-- [ ] Subject management (admin CRUD)
-- [ ] Parent registration + student profiles
+- [x] Role-based middleware & redirects
+- [x] Admin dashboard (stats overview)
+- [x] Tutor registration + profile management
+- [x] Tutor verification (admin approves/rejects)
+- [x] Subject management (admin CRUD)
+- [x] Parent registration + student profiles
 
 ### Phase 2 — Matching & Booking
-- [ ] Parent creates tutor request (subject, area, budget)
-- [ ] Admin matching dashboard — view requests, assign tutors
-- [ ] Tutor receives job offer → accept/reject
-- [ ] Booking created on acceptance
-- [ ] Booking calendar view (tutor & parent)
+- [x] Parent creates tutor request (subject, area, budget)
+- [x] Admin matching dashboard — view requests, assign tutors
+- [x] Tutor receives job offer → accept/reject
+- [x] Booking created on acceptance
+- [x] Booking calendar view (tutor & parent)
 
 ### Phase 3 — Check-In/Check-Out
-- [ ] QR code generated per session (unique token)
-- [ ] Tutor check-in via QR scan (with GPS coords)
-- [ ] Tutor check-out via QR scan
-- [ ] Auto-calculate session duration
-- [ ] Parent confirmation (verify session happened)
-- [ ] Manual check-in fallback (admin override)
+- [x] QR code generated per session (unique token)
+- [x] Tutor check-in via QR scan (with GPS coords)
+- [x] Tutor check-out via QR scan
+- [x] Auto-calculate session duration
+- [x] Parent confirmation (verify session happened)
+- [x] Manual check-in fallback (admin override)
 
 ### Phase 4 — Payment & Earnings
-- [ ] Bayarcash FPX integration
-- [ ] Parent pays per session or monthly
-- [ ] Commission calculation (admin %)
-- [ ] Tutor earnings dashboard
-- [ ] Payout management (admin)
+- [x] Bayarcash FPX integration
+- [x] Parent pays per session or monthly
+- [x] Commission calculation (admin %)
+- [x] Tutor earnings dashboard
+- [x] Payout management (admin)
 
 ### Phase 5 — Reviews & Polish
-- [ ] Rating & review system
-- [ ] Tutor leaderboard / search
-- [ ] WhatsApp notifications
-- [ ] Parent dashboard (child progress)
-- [ ] PWA support
+- [x] Rating & review system
+- [x] Tutor leaderboard / search
+- [x] WhatsApp notifications
+- [x] Parent dashboard (child progress)
+- [x] PWA support
 
 ## Route Plan
 

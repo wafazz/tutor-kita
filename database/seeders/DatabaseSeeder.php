@@ -25,6 +25,7 @@ class DatabaseSeeder extends Seeder
             'role' => 'admin',
             'phone' => '0123456789',
             'is_active' => true,
+            'email_verified_at' => now(),
         ]);
 
         // Demo Tutor
@@ -35,6 +36,7 @@ class DatabaseSeeder extends Seeder
             'role' => 'tutor',
             'phone' => '0198765432',
             'is_active' => true,
+            'email_verified_at' => now(),
         ]);
 
         TutorProfile::create([
@@ -58,6 +60,7 @@ class DatabaseSeeder extends Seeder
             'role' => 'parent',
             'phone' => '0176543210',
             'is_active' => true,
+            'email_verified_at' => now(),
         ]);
 
         Student::create([
@@ -70,18 +73,18 @@ class DatabaseSeeder extends Seeder
 
         // Subjects
         $subjects = [
-            ['name' => 'Mathematics', 'category' => 'academic', 'education_level' => 'SPM'],
-            ['name' => 'Additional Mathematics', 'category' => 'academic', 'education_level' => 'SPM'],
-            ['name' => 'Science', 'category' => 'academic', 'education_level' => 'SPM'],
-            ['name' => 'Physics', 'category' => 'academic', 'education_level' => 'SPM'],
-            ['name' => 'Chemistry', 'category' => 'academic', 'education_level' => 'SPM'],
-            ['name' => 'Biology', 'category' => 'academic', 'education_level' => 'SPM'],
-            ['name' => 'Bahasa Melayu', 'category' => 'language', 'education_level' => 'SPM'],
-            ['name' => 'English', 'category' => 'language', 'education_level' => 'SPM'],
-            ['name' => 'Al-Quran', 'category' => 'quran', 'education_level' => 'All'],
-            ['name' => 'Tajweed', 'category' => 'quran', 'education_level' => 'All'],
-            ['name' => 'Piano', 'category' => 'music', 'education_level' => 'All'],
-            ['name' => 'Guitar', 'category' => 'music', 'education_level' => 'All'],
+            ['name' => 'Mathematics', 'category' => 'academic', 'education_level' => 'SPM', 'hourly_rate' => 45.00],
+            ['name' => 'Additional Mathematics', 'category' => 'academic', 'education_level' => 'SPM', 'hourly_rate' => 55.00],
+            ['name' => 'Science', 'category' => 'academic', 'education_level' => 'SPM', 'hourly_rate' => 40.00],
+            ['name' => 'Physics', 'category' => 'academic', 'education_level' => 'SPM', 'hourly_rate' => 50.00],
+            ['name' => 'Chemistry', 'category' => 'academic', 'education_level' => 'SPM', 'hourly_rate' => 50.00],
+            ['name' => 'Biology', 'category' => 'academic', 'education_level' => 'SPM', 'hourly_rate' => 45.00],
+            ['name' => 'Bahasa Melayu', 'category' => 'language', 'education_level' => 'SPM', 'hourly_rate' => 35.00],
+            ['name' => 'English', 'category' => 'language', 'education_level' => 'SPM', 'hourly_rate' => 40.00],
+            ['name' => 'Al-Quran', 'category' => 'quran', 'education_level' => 'All', 'hourly_rate' => 30.00],
+            ['name' => 'Tajweed', 'category' => 'quran', 'education_level' => 'All', 'hourly_rate' => 30.00],
+            ['name' => 'Piano', 'category' => 'music', 'education_level' => 'All', 'hourly_rate' => 80.00],
+            ['name' => 'Guitar', 'category' => 'music', 'education_level' => 'All', 'hourly_rate' => 60.00],
         ];
 
         foreach ($subjects as $subject) {

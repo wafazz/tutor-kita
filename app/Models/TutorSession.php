@@ -12,7 +12,7 @@ class TutorSession extends Model
         'booking_id', 'session_date', 'start_time', 'end_time', 'check_in_token',
         'checked_in_at', 'checked_out_at', 'check_in_lat', 'check_in_lng',
         'check_out_lat', 'check_out_lng', 'check_in_method', 'duration_minutes',
-        'status', 'tutor_notes', 'parent_confirmed',
+        'status', 'tutor_notes', 'proof_photos', 'parent_confirmed',
     ];
 
     protected function casts(): array
@@ -21,6 +21,7 @@ class TutorSession extends Model
             'session_date' => 'date',
             'checked_in_at' => 'datetime',
             'checked_out_at' => 'datetime',
+            'proof_photos' => 'array',
             'parent_confirmed' => 'boolean',
         ];
     }

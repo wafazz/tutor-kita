@@ -31,6 +31,35 @@ class RegisteredUserController extends Controller
      *
      * @throws ValidationException
      */
+    public function createParent(): Response
+    {
+        return Inertia::render('Auth/RegisterParent');
+    }
+
+    public function storeParent(Request $request): RedirectResponse
+    {
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|string|lowercase|email|max:255|unique:' . User::class,
+            'phone' => 'nullable|string|max:20',
+            'password' => ['required', 'confirmed', Rules\Password::defaults()],
+        ]);
+
+        $user = User::create([
+            'name' => $request->name,
+            'email' => $request->email,
+            'phone' => $request->phone,
+            'password' => Hash::make($request->password),
+            'role' => 'parent',
+        ]);
+
+        event(new Registered($user));
+
+        Auth::login($user);
+
+        return redirect('/parent/dashboard');
+    }
+
     public function store(Request $request): RedirectResponse
     {
         $request->validate([
