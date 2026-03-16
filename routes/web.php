@@ -30,17 +30,11 @@ use App\Http\Controllers\Tutor\JobController;
 use App\Http\Controllers\Tutor\ProfileController as TutorProfileController;
 use App\Http\Controllers\Tutor\ReviewController as TutorReviewController;
 use App\Http\Controllers\Tutor\SessionController as TutorSessionController;
-use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
 Route::get('/', function () {
-    return Inertia::render('Welcome', [
-        'canLogin' => Route::has('login'),
-        'canRegister' => Route::has('register'),
-        'laravelVersion' => Application::VERSION,
-        'phpVersion' => PHP_VERSION,
-    ]);
+    return Inertia::render('Welcome');
 });
 
 Route::get('/tutors', TutorBrowseController::class)->name('tutors.browse');
