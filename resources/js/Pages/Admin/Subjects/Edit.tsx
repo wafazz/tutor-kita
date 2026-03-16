@@ -7,7 +7,8 @@ type Subject = {
     name: string;
     category: string;
     education_level: string | null;
-    hourly_rate: string;
+    hourly_rate_home: string;
+    hourly_rate_online: string;
     is_active: boolean;
 };
 
@@ -20,7 +21,8 @@ export default function SubjectsEdit({ subject }: Props) {
         name: subject.name,
         category: subject.category,
         education_level: subject.education_level ?? '',
-        hourly_rate: Number(subject.hourly_rate) || 0,
+        hourly_rate_home: Number(subject.hourly_rate_home) || 0,
+        hourly_rate_online: Number(subject.hourly_rate_online) || 0,
         is_active: subject.is_active,
     });
 
@@ -81,18 +83,33 @@ export default function SubjectsEdit({ subject }: Props) {
                                 {errors.education_level && <p className="mt-1 text-sm text-red-600">{errors.education_level}</p>}
                             </div>
 
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700">Hourly Rate (RM)</label>
-                                <input
-                                    type="number"
-                                    min="0"
-                                    step="0.50"
-                                    value={data.hourly_rate}
-                                    onChange={(e) => setData('hourly_rate', parseFloat(e.target.value) || 0)}
-                                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                                    placeholder="e.g. 50.00"
-                                />
-                                {errors.hourly_rate && <p className="mt-1 text-sm text-red-600">{errors.hourly_rate}</p>}
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700">Home Tutor Rate (RM/hr)</label>
+                                    <input
+                                        type="number"
+                                        min="0"
+                                        step="0.50"
+                                        value={data.hourly_rate_home}
+                                        onChange={(e) => setData('hourly_rate_home', parseFloat(e.target.value) || 0)}
+                                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                                        placeholder="e.g. 50.00"
+                                    />
+                                    {errors.hourly_rate_home && <p className="mt-1 text-sm text-red-600">{errors.hourly_rate_home}</p>}
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700">Online Class Rate (RM/hr)</label>
+                                    <input
+                                        type="number"
+                                        min="0"
+                                        step="0.50"
+                                        value={data.hourly_rate_online}
+                                        onChange={(e) => setData('hourly_rate_online', parseFloat(e.target.value) || 0)}
+                                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                                        placeholder="e.g. 40.00"
+                                    />
+                                    {errors.hourly_rate_online && <p className="mt-1 text-sm text-red-600">{errors.hourly_rate_online}</p>}
+                                </div>
                             </div>
 
                             <div className="flex items-center">

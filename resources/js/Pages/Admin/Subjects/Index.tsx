@@ -7,7 +7,8 @@ type Subject = {
     name: string;
     category: string;
     education_level: string | null;
-    hourly_rate: string;
+    hourly_rate_home: string;
+    hourly_rate_online: string;
     is_active: boolean;
 };
 
@@ -60,7 +61,8 @@ export default function SubjectsIndex({ subjects }: Props) {
                                     <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Name</th>
                                     <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Category</th>
                                     <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Education Level</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Rate (RM/hr)</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Home (RM/hr)</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Online (RM/hr)</th>
                                     <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Active</th>
                                     <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Actions</th>
                                 </tr>
@@ -73,7 +75,10 @@ export default function SubjectsIndex({ subjects }: Props) {
                                         <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500 capitalize">{subject.category}</td>
                                         <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">{subject.education_level ?? '-'}</td>
                                         <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-900 font-medium">
-                                            {Number(subject.hourly_rate).toFixed(2)}
+                                            {Number(subject.hourly_rate_home).toFixed(2)}
+                                        </td>
+                                        <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-900 font-medium">
+                                            {Number(subject.hourly_rate_online).toFixed(2)}
                                         </td>
                                         <td className="whitespace-nowrap px-6 py-4 text-sm">
                                             {subject.is_active ? (
@@ -100,7 +105,7 @@ export default function SubjectsIndex({ subjects }: Props) {
                                 ))}
                                 {subjects.data.length === 0 && (
                                     <tr>
-                                        <td colSpan={7} className="px-6 py-4 text-center text-sm text-gray-500">No subjects found.</td>
+                                        <td colSpan={8} className="px-6 py-4 text-center text-sm text-gray-500">No subjects found.</td>
                                     </tr>
                                 )}
                             </tbody>

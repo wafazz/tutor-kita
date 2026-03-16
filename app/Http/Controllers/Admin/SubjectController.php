@@ -27,7 +27,8 @@ class SubjectController extends Controller
             'name' => 'required|string|max:255',
             'category' => 'required|in:academic,language,quran,music,other',
             'education_level' => 'required|string|max:255',
-            'hourly_rate' => 'required|numeric|min:0',
+            'hourly_rate_home' => 'required|numeric|min:0',
+            'hourly_rate_online' => 'required|numeric|min:0',
         ]);
 
         Subject::create($validated);
@@ -48,7 +49,8 @@ class SubjectController extends Controller
             'name' => 'required|string|max:255',
             'category' => 'required|in:academic,language,quran,music,other',
             'education_level' => 'required|string|max:255',
-            'hourly_rate' => 'required|numeric|min:0',
+            'hourly_rate_home' => 'required|numeric|min:0',
+            'hourly_rate_online' => 'required|numeric|min:0',
         ]);
 
         $subject->update($validated);
