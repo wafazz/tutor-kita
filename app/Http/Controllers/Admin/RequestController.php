@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Payment;
+use App\Models\Subject;
 use App\Models\TutorRequest;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -81,15 +82,30 @@ class RequestController extends Controller
         // Single request: create payment immediately
         $this->createSinglePayment($tutorRequest, $tutor);
 
-        $tutorRequest->load('package');
-        $amount = $tutorRequest->package ? $tutorRequest->package->price : 0;
-        return redirect()->back()->with('success', "Request assigned to {$tutor->name}. Payment of RM " . number_format((float) $amount, 2) . " pending from parent.");
+        $amount = $this->calculateAmount($tutorRequest);
+        return redirect()->back()->with('success', "Request assigned to {$tutor->name}. Payment of RM " . number_format($amount, 2) . " pending from parent.");
+    }
+
+    private function calculateAmount(TutorRequest $tutorRequest): float
+    {
+        $tutorRequest->load(['subject', 'package']);
+        $subject = $tutorRequest->subject;
+        $package = $tutorRequest->package;
+        if (!$subject || !$package) {
+            return 0;
+        }
+
+        $location = $tutorRequest->preferred_location ?? 'home';
+        $rate = $location === 'online'
+            ? (float) $subject->hourly_rate_online
+            : (float) $subject->hourly_rate_home;
+
+        return $rate * (float) $package->duration_hours * $package->total_sessions;
     }
 
     private function createSinglePayment(TutorRequest $tutorRequest, User $tutor): void
     {
-        $tutorRequest->load('package');
-        $amount = $tutorRequest->package ? (float) $tutorRequest->package->price : 0;
+        $amount = $this->calculateAmount($tutorRequest);
         $commissionRate = $tutor->tutorProfile?->commission_rate ?? 20;
         $commissionAmount = $amount * ((float) $commissionRate / 100);
         $tutorPayout = $amount - $commissionAmount;
@@ -109,25 +125,29 @@ class RequestController extends Controller
 
     private function createGroupPayment($group): void
     {
-        // Use first request in group as the payment anchor
         $firstRequest = $group->first();
-        $firstRequest->load('package');
-        $amount = $firstRequest->package ? (float) $firstRequest->package->price : 0;
+        $totalAmount = 0;
 
-        // Average commission rate across all tutors in the group
+        // Sum up price per subject based on its rate × package duration × sessions
+        foreach ($group as $req) {
+            $totalAmount += $this->calculateAmount($req);
+        }
+
+        // Calculate commission across all tutors
         $totalCommission = 0;
         foreach ($group as $req) {
             $tutor = User::find($req->matched_tutor_id);
             $rate = $tutor?->tutorProfile?->commission_rate ?? 20;
-            $totalCommission += $amount / $group->count() * ((float) $rate / 100);
+            $reqAmount = $this->calculateAmount($req);
+            $totalCommission += $reqAmount * ((float) $rate / 100);
         }
-        $tutorPayout = $amount - $totalCommission;
+        $tutorPayout = $totalAmount - $totalCommission;
 
         Payment::updateOrCreate(
             ['tutor_request_id' => $firstRequest->id],
             [
                 'parent_id' => $firstRequest->parent_id,
-                'amount' => $amount,
+                'amount' => round($totalAmount, 2),
                 'commission_amount' => round($totalCommission, 2),
                 'tutor_payout' => round($tutorPayout, 2),
                 'payment_method' => 'fpx',

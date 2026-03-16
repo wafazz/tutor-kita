@@ -15,6 +15,8 @@ type Subject = {
     id: number;
     name: string;
     category: string;
+    hourly_rate_home: string;
+    hourly_rate_online: string;
 };
 
 type PackageItem = {
@@ -25,7 +27,7 @@ type PackageItem = {
     total_sessions: number;
     duration_hours: number;
     price: number;
-    subjects: { id: number; name: string }[];
+    subjects: { id: number; name: string; hourly_rate_home: string; hourly_rate_online: string }[];
 };
 
 export default function RequestsCreate({ students, subjects, packages }: { students: Student[]; subjects: Subject[]; packages: PackageItem[] }) {
@@ -44,13 +46,34 @@ export default function RequestsCreate({ students, subjects, packages }: { stude
     const selectedPackage = packages.find((p) => String(p.id) === data.package_id);
     const isMultiSubject = selectedPackage?.package_type === 'specific' && selectedPackage.subjects.length > 1;
     const selectedSubjectId = data.subject_id ? Number(data.subject_id) : null;
+    const selectedSubject = subjects.find((s) => s.id === selectedSubjectId);
 
     const filteredPackages = packages.filter(pkg => {
         if (pkg.package_type === 'all') return true;
-        if (pkg.package_type === 'specific' && pkg.subjects.length > 1) return true; // multi-subject always visible
+        if (pkg.package_type === 'specific' && pkg.subjects.length > 1) return true;
         if (!selectedSubjectId) return true;
         return pkg.subjects.some(s => s.id === selectedSubjectId);
     });
+
+    const getHourlyRate = (subject: Subject | { hourly_rate_home: string; hourly_rate_online: string } | undefined): number => {
+        if (!subject) return 0;
+        if (data.preferred_location === 'online') return Number(subject.hourly_rate_online) || 0;
+        return Number(subject.hourly_rate_home) || 0;
+    };
+
+    const calcPackagePrice = (pkg: PackageItem): number => {
+        if (isMultiSubject && pkg.package_type === 'specific') {
+            let total = 0;
+            for (const sub of pkg.subjects) {
+                total += getHourlyRate(sub) * Number(pkg.duration_hours) * pkg.total_sessions;
+            }
+            return total;
+        }
+        const rate = selectedSubject ? getHourlyRate(selectedSubject) : 0;
+        return rate * Number(pkg.duration_hours) * pkg.total_sessions;
+    };
+
+    const totalPrice = selectedPackage ? calcPackagePrice(selectedPackage) : 0;
 
     const submit: FormEventHandler = (e) => {
         e.preventDefault();
@@ -88,115 +111,7 @@ export default function RequestsCreate({ students, subjects, packages }: { stude
                             {errors.student_id && <p className="mt-1 text-sm text-red-600">{errors.student_id}</p>}
                         </div>
 
-                        {!isMultiSubject && (
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700">
-                                    Subject <span className="text-red-500">*</span>
-                                </label>
-                                <select
-                                    value={data.subject_id}
-                                    onChange={(e) => { setData('subject_id', e.target.value); setData('package_id', ''); }}
-                                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                                    required
-                                >
-                                    <option value="">Select subject</option>
-                                    {subjects.map((s) => (
-                                        <option key={s.id} value={s.id}>{s.name} ({s.category})</option>
-                                    ))}
-                                </select>
-                                {errors.subject_id && <p className="mt-1 text-sm text-red-600">{errors.subject_id}</p>}
-                            </div>
-                        )}
-
-                        {isMultiSubject && selectedPackage && (
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">Subjects Included</label>
-                                <div className="flex flex-wrap gap-2">
-                                    {selectedPackage.subjects.map(sub => (
-                                        <span key={sub.id} className="inline-flex items-center gap-1 rounded-full bg-purple-100 px-3 py-1 text-sm font-medium text-purple-700">
-                                            <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
-                                                <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                                            </svg>
-                                            {sub.name}
-                                        </span>
-                                    ))}
-                                </div>
-                                <p className="mt-2 text-xs text-gray-500">A separate tutor request will be created for each subject. Different tutors can be assigned.</p>
-                            </div>
-                        )}
-
-                        {/* Package Selection */}
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-3">
-                                Learning Package <span className="text-red-500">*</span>
-                            </label>
-                            {filteredPackages.length === 0 ? (
-                                <p className="text-sm text-gray-500">{data.subject_id ? 'No packages available for this subject.' : 'Select a subject first to see available packages.'}</p>
-                            ) : (
-                                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                                    {filteredPackages.map((pkg) => {
-                                        const isSelected = data.package_id === String(pkg.id);
-                                        return (
-                                            <button
-                                                key={pkg.id}
-                                                type="button"
-                                                onClick={() => setData('package_id', String(pkg.id))}
-                                                className={`relative rounded-xl border-2 p-4 text-left transition-all ${
-                                                    isSelected
-                                                        ? 'border-indigo-500 bg-indigo-50 ring-1 ring-indigo-500'
-                                                        : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
-                                                }`}
-                                            >
-                                                {isSelected && (
-                                                    <div className="absolute right-3 top-3 flex h-5 w-5 items-center justify-center rounded-full bg-indigo-600">
-                                                        <svg className="h-3 w-3 text-white" fill="none" viewBox="0 0 24 24" strokeWidth="3" stroke="currentColor">
-                                                            <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                                                        </svg>
-                                                    </div>
-                                                )}
-                                                <p className="text-base font-semibold text-gray-900">{pkg.name}</p>
-                                                {pkg.description && (
-                                                    <p className="mt-0.5 text-xs text-gray-500">{pkg.description}</p>
-                                                )}
-                                                <div className="mt-3 flex items-baseline gap-1">
-                                                    <span className="text-xl font-bold text-indigo-600">RM {Number(pkg.price).toFixed(2)}</span>
-                                                </div>
-                                                <div className="mt-2 flex items-center gap-3 text-xs text-gray-500">
-                                                    <span className="flex items-center gap-1">
-                                                        <svg className="h-3.5 w-3.5 text-indigo-400" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
-                                                            <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
-                                                        </svg>
-                                                        {pkg.total_sessions} session{pkg.total_sessions > 1 ? 's' : ''}
-                                                    </span>
-                                                    <span className="flex items-center gap-1">
-                                                        <svg className="h-3.5 w-3.5 text-indigo-400" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
-                                                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                                        </svg>
-                                                        {Number(pkg.duration_hours)}h each
-                                                    </span>
-                                                </div>
-                                            </button>
-                                        );
-                                    })}
-                                </div>
-                            )}
-                            {errors.package_id && <p className="mt-1 text-sm text-red-600">{errors.package_id}</p>}
-                        </div>
-
-                        {/* Selected package summary */}
-                        {selectedPackage && (
-                            <div className="rounded-lg border border-indigo-200 bg-indigo-50 p-4">
-                                <div className="flex items-center justify-between">
-                                    <div className="text-sm">
-                                        <span className="font-medium text-indigo-800">Selected: </span>
-                                        <span className="text-indigo-700">{selectedPackage.name} — {selectedPackage.total_sessions} sessions x {Number(selectedPackage.duration_hours)}h</span>
-                                    </div>
-                                    <span className="text-sm font-bold text-indigo-800">RM {Number(selectedPackage.price).toFixed(2)}</span>
-                                </div>
-                            </div>
-                        )}
-
-                        {/* Preferred Location */}
+                        {/* Preferred Location — moved before subject/package so price can react */}
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-3">
                                 Preferred Location <span className="text-red-500">*</span>
@@ -250,6 +165,131 @@ export default function RequestsCreate({ students, subjects, packages }: { stude
                                     required
                                 />
                                 {errors.preferred_area && <p className="mt-1 text-sm text-red-600">{errors.preferred_area}</p>}
+                            </div>
+                        )}
+
+                        {!isMultiSubject && (
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700">
+                                    Subject <span className="text-red-500">*</span>
+                                </label>
+                                <select
+                                    value={data.subject_id}
+                                    onChange={(e) => { setData('subject_id', e.target.value); setData('package_id', ''); }}
+                                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                    required
+                                >
+                                    <option value="">Select subject</option>
+                                    {subjects.map((s) => {
+                                        const rate = getHourlyRate(s);
+                                        return (
+                                            <option key={s.id} value={s.id}>
+                                                {s.name} ({s.category}){rate > 0 ? ` — RM${rate.toFixed(2)}/hr` : ''}
+                                            </option>
+                                        );
+                                    })}
+                                </select>
+                                {errors.subject_id && <p className="mt-1 text-sm text-red-600">{errors.subject_id}</p>}
+                            </div>
+                        )}
+
+                        {isMultiSubject && selectedPackage && (
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">Subjects Included</label>
+                                <div className="flex flex-wrap gap-2">
+                                    {selectedPackage.subjects.map(sub => {
+                                        const rate = getHourlyRate(sub);
+                                        return (
+                                            <span key={sub.id} className="inline-flex items-center gap-1 rounded-full bg-purple-100 px-3 py-1 text-sm font-medium text-purple-700">
+                                                <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                                                </svg>
+                                                {sub.name}{rate > 0 ? ` (RM${rate.toFixed(2)}/hr)` : ''}
+                                            </span>
+                                        );
+                                    })}
+                                </div>
+                                <p className="mt-2 text-xs text-gray-500">A separate tutor request will be created for each subject. Different tutors can be assigned.</p>
+                            </div>
+                        )}
+
+                        {/* Package Selection */}
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-3">
+                                Learning Package <span className="text-red-500">*</span>
+                            </label>
+                            {filteredPackages.length === 0 ? (
+                                <p className="text-sm text-gray-500">{data.subject_id ? 'No packages available for this subject.' : 'Select a subject first to see available packages.'}</p>
+                            ) : (
+                                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                                    {filteredPackages.map((pkg) => {
+                                        const isSelected = data.package_id === String(pkg.id);
+                                        const price = calcPackagePrice(pkg);
+                                        const hasRate = data.preferred_location && (selectedSubject || (pkg.package_type === 'specific' && pkg.subjects.length > 1));
+                                        return (
+                                            <button
+                                                key={pkg.id}
+                                                type="button"
+                                                onClick={() => setData('package_id', String(pkg.id))}
+                                                className={`relative rounded-xl border-2 p-4 text-left transition-all ${
+                                                    isSelected
+                                                        ? 'border-indigo-500 bg-indigo-50 ring-1 ring-indigo-500'
+                                                        : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                                                }`}
+                                            >
+                                                {isSelected && (
+                                                    <div className="absolute right-3 top-3 flex h-5 w-5 items-center justify-center rounded-full bg-indigo-600">
+                                                        <svg className="h-3 w-3 text-white" fill="none" viewBox="0 0 24 24" strokeWidth="3" stroke="currentColor">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                                                        </svg>
+                                                    </div>
+                                                )}
+                                                <p className="text-base font-semibold text-gray-900">{pkg.name}</p>
+                                                {pkg.description && (
+                                                    <p className="mt-0.5 text-xs text-gray-500">{pkg.description}</p>
+                                                )}
+                                                <div className="mt-3 flex items-baseline gap-1">
+                                                    {hasRate && price > 0 ? (
+                                                        <span className="text-xl font-bold text-indigo-600">RM {price.toFixed(2)}</span>
+                                                    ) : (
+                                                        <span className="text-sm text-gray-400">Select location & subject to see price</span>
+                                                    )}
+                                                </div>
+                                                <div className="mt-2 flex items-center gap-3 text-xs text-gray-500">
+                                                    <span className="flex items-center gap-1">
+                                                        <svg className="h-3.5 w-3.5 text-indigo-400" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
+                                                        </svg>
+                                                        {pkg.total_sessions} session{pkg.total_sessions > 1 ? 's' : ''}
+                                                    </span>
+                                                    <span className="flex items-center gap-1">
+                                                        <svg className="h-3.5 w-3.5 text-indigo-400" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                        </svg>
+                                                        {Number(pkg.duration_hours)}h each
+                                                    </span>
+                                                </div>
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            )}
+                            {errors.package_id && <p className="mt-1 text-sm text-red-600">{errors.package_id}</p>}
+                        </div>
+
+                        {/* Selected package summary */}
+                        {selectedPackage && totalPrice > 0 && (
+                            <div className="rounded-lg border border-indigo-200 bg-indigo-50 p-4">
+                                <div className="flex items-center justify-between">
+                                    <div className="text-sm">
+                                        <span className="font-medium text-indigo-800">Selected: </span>
+                                        <span className="text-indigo-700">{selectedPackage.name} — {selectedPackage.total_sessions} sessions x {Number(selectedPackage.duration_hours)}h</span>
+                                    </div>
+                                    <span className="text-sm font-bold text-indigo-800">RM {totalPrice.toFixed(2)}</span>
+                                </div>
+                                <p className="mt-1 text-xs text-indigo-600">
+                                    Rate: RM {getHourlyRate(selectedSubject || selectedPackage.subjects[0]).toFixed(2)}/hr x {Number(selectedPackage.duration_hours)}h x {selectedPackage.total_sessions} sessions
+                                </p>
                             </div>
                         )}
 
