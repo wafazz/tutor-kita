@@ -85,6 +85,8 @@ class RegisteredUserController extends Controller
         TutorProfile::create([
             'user_id' => $user->id,
             'verification_status' => 'pending',
+            'subjects' => [],
+            'hourly_rate' => 0,
         ]);
 
         event(new Registered($user));
