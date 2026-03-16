@@ -17,6 +17,7 @@ use App\Http\Controllers\Admin\TutorController as AdminTutorController;
 use App\Http\Controllers\ParentUser\BookingController as ParentBookingController;
 use App\Http\Controllers\ParentUser\DashboardController as ParentDashboardController;
 use App\Http\Controllers\ParentUser\PaymentController as ParentPaymentController;
+use App\Http\Controllers\ParentUser\ReportController as ParentReportController;
 use App\Http\Controllers\ParentUser\ReviewController as ParentReviewController;
 use App\Http\Controllers\ParentUser\SessionController as ParentSessionController;
 use App\Http\Controllers\ParentUser\StudentController;
@@ -28,6 +29,7 @@ use App\Http\Controllers\Tutor\DashboardController as TutorDashboardController;
 use App\Http\Controllers\Tutor\EarningController;
 use App\Http\Controllers\Tutor\JobController;
 use App\Http\Controllers\Tutor\ProfileController as TutorProfileController;
+use App\Http\Controllers\Tutor\ReportController as TutorReportController;
 use App\Http\Controllers\Tutor\ReviewController as TutorReviewController;
 use App\Http\Controllers\Tutor\SessionController as TutorSessionController;
 use Illuminate\Support\Facades\Route;
@@ -156,6 +158,10 @@ Route::middleware(['auth', 'verified', 'role:tutor', 'tutor.verified'])->prefix(
     Route::get('/earnings', [EarningController::class, 'index'])->name('earnings.index');
 
     Route::get('/reviews', [TutorReviewController::class, 'index'])->name('reviews.index');
+
+    Route::get('/reports', [TutorReportController::class, 'index'])->name('reports.index');
+    Route::get('/reports/create', [TutorReportController::class, 'create'])->name('reports.create');
+    Route::post('/reports', [TutorReportController::class, 'store'])->name('reports.store');
 });
 
 // Parent routes
@@ -184,6 +190,9 @@ Route::middleware(['auth', 'verified', 'role:parent'])->prefix('parent')->name('
 
     Route::get('/reviews/{booking}/create', [ParentReviewController::class, 'create'])->name('reviews.create');
     Route::post('/reviews/{booking}', [ParentReviewController::class, 'store'])->name('reviews.store');
+
+    Route::get('/reports', [ParentReportController::class, 'index'])->name('reports.index');
+    Route::get('/reports/{student}', [ParentReportController::class, 'show'])->name('reports.show');
 });
 
 require __DIR__.'/auth.php';
