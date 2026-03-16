@@ -34,7 +34,10 @@ export default function RequestsCreate({ students, subjects, packages }: { stude
         subject_id: '',
         package_id: '',
         preferred_area: '',
+        preferred_location: '',
         preferred_schedule: '',
+        preferred_time: '',
+        preferred_tutor_gender: '',
         notes: '',
     });
 
@@ -193,29 +196,123 @@ export default function RequestsCreate({ students, subjects, packages }: { stude
                             </div>
                         )}
 
+                        {/* Preferred Location */}
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-3">
+                                Preferred Location <span className="text-red-500">*</span>
+                            </label>
+                            <div className="grid grid-cols-2 gap-3">
+                                {[
+                                    { value: 'home', label: 'Home Tutor', icon: 'M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25' },
+                                    { value: 'online', label: 'Online Class', icon: 'M9 17.25v1.007a3 3 0 01-.879 2.122L7.5 21h9l-.621-.621A3 3 0 0115 18.257V17.25m6-12V15a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 15V5.25m18 0A2.25 2.25 0 0018.75 3H5.25A2.25 2.25 0 003 5.25m18 0V12a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 12V5.25' },
+                                ].map((opt) => (
+                                    <button
+                                        key={opt.value}
+                                        type="button"
+                                        onClick={() => setData('preferred_location', opt.value)}
+                                        className={`relative flex items-center gap-3 rounded-xl border-2 p-4 text-left transition-all ${
+                                            data.preferred_location === opt.value
+                                                ? 'border-indigo-500 bg-indigo-50 ring-1 ring-indigo-500'
+                                                : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                                        }`}
+                                    >
+                                        {data.preferred_location === opt.value && (
+                                            <div className="absolute right-3 top-3 flex h-5 w-5 items-center justify-center rounded-full bg-indigo-600">
+                                                <svg className="h-3 w-3 text-white" fill="none" viewBox="0 0 24 24" strokeWidth="3" stroke="currentColor">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                                                </svg>
+                                            </div>
+                                        )}
+                                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-indigo-50">
+                                            <svg className="h-5 w-5 text-indigo-600" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+                                                <path strokeLinecap="round" strokeLinejoin="round" d={opt.icon} />
+                                            </svg>
+                                        </div>
+                                        <span className="text-sm font-semibold text-gray-900">{opt.label}</span>
+                                    </button>
+                                ))}
+                            </div>
+                            {errors.preferred_location && <p className="mt-1 text-sm text-red-600">{errors.preferred_location}</p>}
+                        </div>
+
+                        {/* Preferred Area — only show for home tutor */}
+                        {data.preferred_location === 'home' && (
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700">
+                                    Preferred Area <span className="text-red-500">*</span>
+                                </label>
+                                <input
+                                    type="text"
+                                    value={data.preferred_area}
+                                    onChange={(e) => setData('preferred_area', e.target.value)}
+                                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                    placeholder="e.g. Shah Alam, Subang Jaya"
+                                    required
+                                />
+                                {errors.preferred_area && <p className="mt-1 text-sm text-red-600">{errors.preferred_area}</p>}
+                            </div>
+                        )}
+
+                        {/* Preferred Time */}
                         <div>
                             <label className="block text-sm font-medium text-gray-700">
-                                Preferred Area <span className="text-red-500">*</span>
+                                Preferred Time <span className="text-red-500">*</span>
                             </label>
                             <input
                                 type="text"
-                                value={data.preferred_area}
-                                onChange={(e) => setData('preferred_area', e.target.value)}
+                                value={data.preferred_time}
+                                onChange={(e) => setData('preferred_time', e.target.value)}
                                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                                placeholder="e.g. Shah Alam, Subang Jaya"
+                                placeholder="e.g. Weekdays after 3pm, Saturday morning"
                                 required
                             />
-                            {errors.preferred_area && <p className="mt-1 text-sm text-red-600">{errors.preferred_area}</p>}
+                            {errors.preferred_time && <p className="mt-1 text-sm text-red-600">{errors.preferred_time}</p>}
                         </div>
 
+                        {/* Tutor Gender Preference */}
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-3">
+                                Preferred Tutor Gender <span className="text-red-500">*</span>
+                            </label>
+                            <div className="grid grid-cols-3 gap-3">
+                                {[
+                                    { value: 'male', label: 'Male' },
+                                    { value: 'female', label: 'Female' },
+                                    { value: 'both', label: 'Both' },
+                                ].map((opt) => (
+                                    <button
+                                        key={opt.value}
+                                        type="button"
+                                        onClick={() => setData('preferred_tutor_gender', opt.value)}
+                                        className={`relative rounded-xl border-2 px-4 py-3 text-center text-sm font-semibold transition-all ${
+                                            data.preferred_tutor_gender === opt.value
+                                                ? 'border-indigo-500 bg-indigo-50 text-indigo-700 ring-1 ring-indigo-500'
+                                                : 'border-gray-200 text-gray-700 hover:border-gray-300 hover:bg-gray-50'
+                                        }`}
+                                    >
+                                        {data.preferred_tutor_gender === opt.value && (
+                                            <div className="absolute right-2 top-2 flex h-4 w-4 items-center justify-center rounded-full bg-indigo-600">
+                                                <svg className="h-2.5 w-2.5 text-white" fill="none" viewBox="0 0 24 24" strokeWidth="3" stroke="currentColor">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                                                </svg>
+                                            </div>
+                                        )}
+                                        {opt.label}
+                                    </button>
+                                ))}
+                            </div>
+                            {errors.preferred_tutor_gender && <p className="mt-1 text-sm text-red-600">{errors.preferred_tutor_gender}</p>}
+                        </div>
+
+                        {/* Preferred Schedule */}
                         <div>
                             <label className="block text-sm font-medium text-gray-700">Preferred Schedule</label>
                             <textarea
                                 value={data.preferred_schedule}
                                 onChange={(e) => setData('preferred_schedule', e.target.value)}
-                                rows={3}
+                                rows={2}
                                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                                placeholder="e.g. Weekdays after 3pm, Saturday morning"
+                                placeholder="e.g. Monday & Wednesday, 2 times per week"
                             />
                             {errors.preferred_schedule && <p className="mt-1 text-sm text-red-600">{errors.preferred_schedule}</p>}
                         </div>
