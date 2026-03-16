@@ -57,7 +57,7 @@ class RegisteredUserController extends Controller
 
         Auth::login($user);
 
-        return redirect('/parent/dashboard');
+        return redirect(route('verification.notice'));
     }
 
     public function store(Request $request): RedirectResponse
