@@ -1,4 +1,5 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
+import { PageProps } from '@/types';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 
 type Subject = {
@@ -18,7 +19,7 @@ type Props = {
 };
 
 export default function SubjectsIndex({ subjects }: Props) {
-    const { flash } = usePage<{ flash: { success?: string } }>().props;
+    const { flash } = usePage<PageProps<{ flash: { success?: string } }>>().props;
 
     const handleDelete = (id: number) => {
         if (confirm('Are you sure you want to delete this subject?')) {
