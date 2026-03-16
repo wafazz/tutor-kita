@@ -87,6 +87,8 @@ class RegisteredUserController extends Controller
             'verification_status' => 'pending',
             'subjects' => [],
             'hourly_rate' => 0,
+            'location_area' => '',
+            'location_state' => '',
         ]);
 
         event(new Registered($user));
