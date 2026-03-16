@@ -28,8 +28,8 @@ type Props = {
 function PackageForm({ pkg, subjects, onClose }: { pkg?: PackageItem; subjects: SubjectItem[]; onClose: () => void }) {
     const { data, setData, post, put, processing, errors, reset } = useForm({
         name: pkg?.name ?? '',
-        package_type: pkg?.package_type ?? 'all' as 'all' | 'specific',
-        subject_ids: pkg?.subjects?.map(s => s.id) ?? [] as number[],
+        package_type: 'specific' as 'all' | 'specific',
+        subject_ids: pkg?.subjects?.map(s => s.id) ?? subjects.map(s => s.id) as number[],
         description: pkg?.description ?? '',
         total_sessions: pkg?.total_sessions ?? 4,
         duration_hours: pkg?.duration_hours ?? 1,
@@ -79,55 +79,28 @@ function PackageForm({ pkg, subjects, onClose }: { pkg?: PackageItem; subjects: 
                     </div>
 
                     <div className="sm:col-span-2">
-                        <label className="block text-sm font-medium text-gray-700">Applies To</label>
-                        <div className="mt-2 flex gap-4">
-                            <label className="inline-flex items-center gap-2 cursor-pointer">
-                                <input
-                                    type="radio"
-                                    checked={data.package_type === 'all'}
-                                    onChange={() => { setData('package_type', 'all'); }}
-                                    className="h-4 w-4 border-gray-300 text-indigo-600 focus:ring-indigo-500"
-                                />
-                                <span className="text-sm text-gray-700">All Subjects</span>
-                            </label>
-                            <label className="inline-flex items-center gap-2 cursor-pointer">
-                                <input
-                                    type="radio"
-                                    checked={data.package_type === 'specific'}
-                                    onChange={() => setData('package_type', 'specific')}
-                                    className="h-4 w-4 border-gray-300 text-indigo-600 focus:ring-indigo-500"
-                                />
-                                <span className="text-sm text-gray-700">Specific Subjects</span>
-                            </label>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Applies To</label>
+                        <div className="flex flex-wrap gap-2">
+                            {subjects.map(sub => (
+                                <button
+                                    key={sub.id}
+                                    type="button"
+                                    onClick={() => toggleSubject(sub.id)}
+                                    className={`rounded-full px-3 py-1.5 text-sm font-medium transition-colors ${
+                                        data.subject_ids.includes(sub.id)
+                                            ? 'bg-indigo-600 text-white'
+                                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                    }`}
+                                >
+                                    {sub.name}
+                                </button>
+                            ))}
                         </div>
-                        {errors.package_type && <p className="mt-1 text-sm text-red-600">{errors.package_type}</p>}
+                        {subjects.length === 0 && (
+                            <p className="mt-1 text-sm text-gray-400">No subjects available. Create subjects first.</p>
+                        )}
+                        {errors.subject_ids && <p className="mt-1 text-sm text-red-600">{errors.subject_ids}</p>}
                     </div>
-
-                    {data.package_type === 'specific' && (
-                        <div className="sm:col-span-2">
-                            <label className="block text-sm font-medium text-gray-700 mb-2">Select Subjects</label>
-                            <div className="flex flex-wrap gap-2">
-                                {subjects.map(sub => (
-                                    <button
-                                        key={sub.id}
-                                        type="button"
-                                        onClick={() => toggleSubject(sub.id)}
-                                        className={`rounded-full px-3 py-1.5 text-sm font-medium transition-colors ${
-                                            data.subject_ids.includes(sub.id)
-                                                ? 'bg-indigo-600 text-white'
-                                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                                        }`}
-                                    >
-                                        {sub.name}
-                                    </button>
-                                ))}
-                            </div>
-                            {subjects.length === 0 && (
-                                <p className="mt-1 text-sm text-gray-400">No subjects available. Create subjects first.</p>
-                            )}
-                            {errors.subject_ids && <p className="mt-1 text-sm text-red-600">{errors.subject_ids}</p>}
-                        </div>
-                    )}
 
                     <div className="sm:col-span-2">
                         <label className="block text-sm font-medium text-gray-700">Description</label>
@@ -316,19 +289,14 @@ export default function PackagesIndex({ packages, subjects }: Props) {
                                     </div>
 
                                     {/* Subject badges */}
-                                    <div className="mt-3">
-                                        {pkg.package_type === 'all' ? (
-                                            <span className="inline-flex rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-700">
-                                                All Subjects
+                                    <div className="mt-3 flex flex-wrap gap-1">
+                                        {pkg.subjects.map(sub => (
+                                            <span key={sub.id} className="inline-flex rounded-full bg-purple-100 px-2 py-0.5 text-xs font-medium text-purple-700">
+                                                {sub.name}
                                             </span>
-                                        ) : (
-                                            <div className="flex flex-wrap gap-1">
-                                                {pkg.subjects.map(sub => (
-                                                    <span key={sub.id} className="inline-flex rounded-full bg-purple-100 px-2 py-0.5 text-xs font-medium text-purple-700">
-                                                        {sub.name}
-                                                    </span>
-                                                ))}
-                                            </div>
+                                        ))}
+                                        {pkg.subjects.length === 0 && (
+                                            <span className="text-xs text-gray-400">No subjects assigned</span>
                                         )}
                                     </div>
 
