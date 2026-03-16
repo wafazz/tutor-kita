@@ -29,7 +29,7 @@ function PackageForm({ pkg, subjects, onClose }: { pkg?: PackageItem; subjects: 
     const { data, setData, post, put, processing, errors, reset } = useForm({
         name: pkg?.name ?? '',
         package_type: 'specific' as 'all' | 'specific',
-        subject_ids: pkg?.subjects?.map(s => s.id) ?? subjects.map(s => s.id) as number[],
+        subject_ids: pkg?.subjects?.map(s => s.id) ?? [] as number[],
         description: pkg?.description ?? '',
         total_sessions: pkg?.total_sessions ?? 4,
         duration_hours: pkg?.duration_hours ?? 1,
@@ -45,8 +45,11 @@ function PackageForm({ pkg, subjects, onClose }: { pkg?: PackageItem; subjects: 
         );
     };
 
+    const canSubmit = data.subject_ids.length > 0;
+
     const submit = (e: React.FormEvent) => {
         e.preventDefault();
+        if (!canSubmit) return;
         if (pkg) {
             put(route('admin.packages.update', pkg.id), {
                 onSuccess: () => { reset(); onClose(); },
@@ -98,6 +101,9 @@ function PackageForm({ pkg, subjects, onClose }: { pkg?: PackageItem; subjects: 
                         </div>
                         {subjects.length === 0 && (
                             <p className="mt-1 text-sm text-gray-400">No subjects available. Create subjects first.</p>
+                        )}
+                        {!canSubmit && subjects.length > 0 && (
+                            <p className="mt-1 text-sm text-red-600">Please select at least one subject.</p>
                         )}
                         {errors.subject_ids && <p className="mt-1 text-sm text-red-600">{errors.subject_ids}</p>}
                     </div>
@@ -182,7 +188,7 @@ function PackageForm({ pkg, subjects, onClose }: { pkg?: PackageItem; subjects: 
                 <div className="flex items-center gap-3 border-t pt-4">
                     <button
                         type="submit"
-                        disabled={processing}
+                        disabled={processing || !canSubmit}
                         className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
                     >
                         {processing ? 'Saving...' : (pkg ? 'Update Package' : 'Create Package')}
