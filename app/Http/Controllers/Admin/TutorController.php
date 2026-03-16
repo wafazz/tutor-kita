@@ -6,8 +6,10 @@ use App\Http\Controllers\Controller;
 use App\Models\Subject;
 use App\Models\TutorProfile;
 use App\Models\User;
+use App\Mail\TutorVerificationStatus;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
 use Inertia\Inertia;
 
 class TutorController extends Controller
@@ -116,6 +118,8 @@ class TutorController extends Controller
             'verification_status' => $validated['status'],
             'verified_at' => $validated['status'] === 'verified' ? now() : null,
         ]);
+
+        Mail::to($tutor->email)->send(new TutorVerificationStatus($tutor, $validated['status']));
 
         return redirect()->back()->with('success', 'Tutor verification status updated.');
     }

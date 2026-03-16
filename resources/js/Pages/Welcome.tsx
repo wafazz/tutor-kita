@@ -248,7 +248,7 @@ export default function Welcome({ auth }: PageProps) {
                                 </div>
 
                                 <Link
-                                    href={route('register')}
+                                    href={route('register.tutor')}
                                     className="mt-8 inline-flex items-center gap-2 rounded-xl bg-white px-6 py-3 text-sm font-semibold text-indigo-700 transition hover:bg-indigo-50"
                                 >
                                     Register as Tutor

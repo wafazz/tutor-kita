@@ -116,8 +116,22 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('ad
     Route::post('/hq-profile/password', [HqProfileController::class, 'updatePassword'])->name('hq-profile.update-password');
 });
 
+// Tutor pending approval (email verified but HQ not yet approved)
+Route::middleware(['auth', 'verified', 'role:tutor'])->get('/tutor/pending-approval', function () {
+    $user = auth()->user();
+    $status = $user->tutorProfile?->verification_status ?? 'pending';
+
+    if ($status === 'verified') {
+        return redirect()->route('tutor.dashboard');
+    }
+
+    return \Inertia\Inertia::render('Tutor/PendingApproval', [
+        'status' => $status,
+    ]);
+})->name('tutor.pending-approval');
+
 // Tutor routes
-Route::middleware(['auth', 'verified', 'role:tutor'])->prefix('tutor')->name('tutor.')->group(function () {
+Route::middleware(['auth', 'verified', 'role:tutor', 'tutor.verified'])->prefix('tutor')->name('tutor.')->group(function () {
     Route::get('/dashboard', TutorDashboardController::class)->name('dashboard');
 
     Route::get('/profile', [TutorProfileController::class, 'edit'])->name('profile.edit');

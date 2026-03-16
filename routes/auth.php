@@ -23,6 +23,12 @@ Route::middleware('guest')->group(function () {
     Route::post('register/parent', [RegisteredUserController::class, 'storeParent'])
         ->name('register.parent.store');
 
+    Route::get('register/tutor', [RegisteredUserController::class, 'createTutor'])
+        ->name('register.tutor');
+
+    Route::post('register/tutor', [RegisteredUserController::class, 'storeTutor'])
+        ->name('register.tutor.store');
+
     Route::get('login', [AuthenticatedSessionController::class, 'create'])
         ->name('login');
 
