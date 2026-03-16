@@ -28,12 +28,8 @@ class AppServiceProvider extends ServiceProvider
         if (Schema::hasTable('settings')) {
             $resendApiKey = Setting::get('resend_api_key');
             if ($resendApiKey) {
-                Config::set('mail.default', 'smtp');
-                Config::set('mail.mailers.smtp.host', 'smtp.resend.com');
-                Config::set('mail.mailers.smtp.port', 465);
-                Config::set('mail.mailers.smtp.username', 'resend');
-                Config::set('mail.mailers.smtp.password', $resendApiKey);
-                Config::set('mail.mailers.smtp.encryption', 'tls');
+                Config::set('mail.default', 'resend');
+                Config::set('resend.api_key', $resendApiKey);
                 Config::set('mail.from.address', Setting::get('resend_from_email', 'noreply@tutorkita.com'));
                 Config::set('mail.from.name', Setting::get('resend_from_name', 'TutorKita'));
             }
