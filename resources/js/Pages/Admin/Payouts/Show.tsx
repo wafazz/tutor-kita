@@ -153,32 +153,34 @@ export default function PayoutShow({ payout, sessions }: Props) {
                     <div className="border-b px-6 py-4">
                         <h3 className="font-semibold text-gray-900">Session Breakdown ({sessions.length})</h3>
                     </div>
-                    <table className="min-w-full divide-y divide-gray-200">
-                        <thead className="bg-gray-50">
-                            <tr>
-                                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Date</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Student</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Subject</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Duration</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Amount</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Commission</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Tutor Share</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-200 bg-white">
-                            {sessions.map((s) => (
-                                <tr key={s.id} className="hover:bg-gray-50">
-                                    <td className="whitespace-nowrap px-6 py-3 text-sm text-gray-900">{s.session?.session_date ?? '-'}</td>
-                                    <td className="whitespace-nowrap px-6 py-3 text-sm text-gray-900">{s.booking.student.name}</td>
-                                    <td className="whitespace-nowrap px-6 py-3 text-sm text-gray-500">{s.booking.subject.name}</td>
-                                    <td className="whitespace-nowrap px-6 py-3 text-sm text-gray-500">{s.session?.duration_minutes ? `${s.session.duration_minutes} min` : '-'}</td>
-                                    <td className="whitespace-nowrap px-6 py-3 text-sm text-gray-900">RM {Number(s.amount).toFixed(2)}</td>
-                                    <td className="whitespace-nowrap px-6 py-3 text-sm text-gray-500">RM {Number(s.commission_amount).toFixed(2)}</td>
-                                    <td className="whitespace-nowrap px-6 py-3 text-sm font-medium text-gray-900">RM {Number(s.tutor_payout).toFixed(2)}</td>
+                    <div className="overflow-x-auto">
+                        <table className="min-w-full divide-y divide-gray-200">
+                            <thead className="bg-gray-50">
+                                <tr>
+                                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Date</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Student</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Subject</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Duration</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Amount</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Commission</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Tutor Share</th>
                                 </tr>
-                            ))}
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody className="divide-y divide-gray-200 bg-white">
+                                {sessions.map((s) => (
+                                    <tr key={s.id} className="hover:bg-gray-50">
+                                        <td className="whitespace-nowrap px-6 py-3 text-sm text-gray-900">{s.session?.session_date ?? '-'}</td>
+                                        <td className="whitespace-nowrap px-6 py-3 text-sm text-gray-900">{s.booking.student.name}</td>
+                                        <td className="whitespace-nowrap px-6 py-3 text-sm text-gray-500">{s.booking.subject.name}</td>
+                                        <td className="whitespace-nowrap px-6 py-3 text-sm text-gray-500">{s.session?.duration_minutes ? `${s.session.duration_minutes} min` : '-'}</td>
+                                        <td className="whitespace-nowrap px-6 py-3 text-sm text-gray-900">RM {Number(s.amount).toFixed(2)}</td>
+                                        <td className="whitespace-nowrap px-6 py-3 text-sm text-gray-500">RM {Number(s.commission_amount).toFixed(2)}</td>
+                                        <td className="whitespace-nowrap px-6 py-3 text-sm font-medium text-gray-900">RM {Number(s.tutor_payout).toFixed(2)}</td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </>
         </AuthenticatedLayout>

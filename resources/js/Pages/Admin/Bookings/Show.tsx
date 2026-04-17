@@ -120,28 +120,30 @@ export default function BookingsShow({ booking }: Props) {
                 {booking.sessions && booking.sessions.length > 0 && (
                     <div className="mt-6 overflow-hidden bg-white p-6 shadow-sm sm:rounded-lg">
                         <h3 className="text-lg font-medium text-gray-900">Sessions</h3>
-                        <table className="mt-4 min-w-full divide-y divide-gray-200">
-                            <thead className="bg-gray-50">
-                                <tr>
-                                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Date</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Status</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Check-in</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Check-out</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Duration (min)</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-gray-200 bg-white">
-                                {booking.sessions.map((session) => (
-                                    <tr key={session.id} className="hover:bg-gray-50">
-                                        <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-900">{session.date}</td>
-                                        <td className="whitespace-nowrap px-6 py-4 text-sm">{sessionStatusBadge(session.status)}</td>
-                                        <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">{session.check_in ?? '-'}</td>
-                                        <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">{session.check_out ?? '-'}</td>
-                                        <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">{session.duration_minutes ?? '-'}</td>
+                        <div className="mt-4 overflow-x-auto">
+                            <table className="min-w-full divide-y divide-gray-200">
+                                <thead className="bg-gray-50">
+                                    <tr>
+                                        <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Date</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Status</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Check-in</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Check-out</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Duration (min)</th>
                                     </tr>
-                                ))}
-                            </tbody>
-                        </table>
+                                </thead>
+                                <tbody className="divide-y divide-gray-200 bg-white">
+                                    {booking.sessions.map((session) => (
+                                        <tr key={session.id} className="hover:bg-gray-50">
+                                            <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-900">{session.date}</td>
+                                            <td className="whitespace-nowrap px-6 py-4 text-sm">{sessionStatusBadge(session.status)}</td>
+                                            <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">{session.check_in ?? '-'}</td>
+                                            <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">{session.check_out ?? '-'}</td>
+                                            <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">{session.duration_minutes ?? '-'}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 )}
             </div>

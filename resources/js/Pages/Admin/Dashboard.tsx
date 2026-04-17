@@ -311,32 +311,34 @@ export default function AdminDashboard({ stats, recentTutors, recentRequests, up
                     {upcomingSessions.length === 0 ? (
                         <p className="p-6 text-center text-sm text-gray-400">No upcoming sessions.</p>
                     ) : (
-                        <table className="min-w-full divide-y divide-gray-200">
-                            <thead className="bg-gray-50">
-                                <tr>
-                                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Date</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Time</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Tutor</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Student</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Subject</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Action</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-gray-200">
-                                {upcomingSessions.map((s) => (
-                                    <tr key={s.id} className="hover:bg-gray-50">
-                                        <td className="whitespace-nowrap px-6 py-3 text-sm text-gray-900">{s.date}</td>
-                                        <td className="whitespace-nowrap px-6 py-3 text-sm text-gray-500">{s.time ?? '-'}</td>
-                                        <td className="whitespace-nowrap px-6 py-3 text-sm text-gray-900">{s.tutor}</td>
-                                        <td className="whitespace-nowrap px-6 py-3 text-sm text-gray-900">{s.student}</td>
-                                        <td className="whitespace-nowrap px-6 py-3 text-sm text-gray-500">{s.subject}</td>
-                                        <td className="whitespace-nowrap px-6 py-3 text-sm">
-                                            <Link href={route('admin.sessions.show', s.id)} className="text-indigo-600 hover:text-indigo-900">View</Link>
-                                        </td>
+                        <div className="overflow-x-auto">
+                            <table className="min-w-full divide-y divide-gray-200">
+                                <thead className="bg-gray-50">
+                                    <tr>
+                                        <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Date</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Time</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Tutor</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Student</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Subject</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Action</th>
                                     </tr>
-                                ))}
-                            </tbody>
-                        </table>
+                                </thead>
+                                <tbody className="divide-y divide-gray-200">
+                                    {upcomingSessions.map((s) => (
+                                        <tr key={s.id} className="hover:bg-gray-50">
+                                            <td className="whitespace-nowrap px-6 py-3 text-sm text-gray-900">{s.date}</td>
+                                            <td className="whitespace-nowrap px-6 py-3 text-sm text-gray-500">{s.time ?? '-'}</td>
+                                            <td className="whitespace-nowrap px-6 py-3 text-sm text-gray-900">{s.tutor}</td>
+                                            <td className="whitespace-nowrap px-6 py-3 text-sm text-gray-900">{s.student}</td>
+                                            <td className="whitespace-nowrap px-6 py-3 text-sm text-gray-500">{s.subject}</td>
+                                            <td className="whitespace-nowrap px-6 py-3 text-sm">
+                                                <Link href={route('admin.sessions.show', s.id)} className="text-indigo-600 hover:text-indigo-900">View</Link>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
                     )}
                 </div>
             </>

@@ -82,7 +82,7 @@ export default function PaymentsIndex({ payments, totals, filters }: Props) {
                 </div>
 
                 {/* Table */}
-                <div className="overflow-hidden bg-white shadow-sm sm:rounded-lg">
+                <div className="overflow-x-auto bg-white shadow-sm sm:rounded-lg">
                     <table className="min-w-full divide-y divide-gray-200">
                         <thead className="bg-gray-50">
                             <tr>

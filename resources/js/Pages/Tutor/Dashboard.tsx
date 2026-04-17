@@ -254,34 +254,36 @@ export default function TutorDashboard({ stats, commission, upcomingSessions, pe
                             <h3 className="font-semibold text-gray-900">Recent Completed Sessions</h3>
                             <Link href={route('tutor.sessions.index', { status: 'completed' })} className="text-xs text-indigo-600 hover:text-indigo-800">View all</Link>
                         </div>
-                        <table className="min-w-full divide-y divide-gray-200">
-                            <thead className="bg-gray-50">
-                                <tr>
-                                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Date</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Student</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Subject</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Duration</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Confirmed</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-gray-200">
-                                {recentSessions.map((s) => (
-                                    <tr key={s.id} className="hover:bg-gray-50">
-                                        <td className="whitespace-nowrap px-6 py-3 text-sm text-gray-900">{s.date}</td>
-                                        <td className="whitespace-nowrap px-6 py-3 text-sm text-gray-900">{s.student}</td>
-                                        <td className="whitespace-nowrap px-6 py-3 text-sm text-gray-500">{s.subject}</td>
-                                        <td className="whitespace-nowrap px-6 py-3 text-sm text-gray-500">{s.duration ? `${s.duration} min` : '-'}</td>
-                                        <td className="whitespace-nowrap px-6 py-3 text-sm">
-                                            {s.confirmed ? (
-                                                <span className="text-green-600 font-medium">Yes</span>
-                                            ) : (
-                                                <span className="text-gray-400">Pending</span>
-                                            )}
-                                        </td>
+                        <div className="overflow-x-auto">
+                            <table className="min-w-full divide-y divide-gray-200">
+                                <thead className="bg-gray-50">
+                                    <tr>
+                                        <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Date</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Student</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Subject</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Duration</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Confirmed</th>
                                     </tr>
-                                ))}
-                            </tbody>
-                        </table>
+                                </thead>
+                                <tbody className="divide-y divide-gray-200">
+                                    {recentSessions.map((s) => (
+                                        <tr key={s.id} className="hover:bg-gray-50">
+                                            <td className="whitespace-nowrap px-6 py-3 text-sm text-gray-900">{s.date}</td>
+                                            <td className="whitespace-nowrap px-6 py-3 text-sm text-gray-900">{s.student}</td>
+                                            <td className="whitespace-nowrap px-6 py-3 text-sm text-gray-500">{s.subject}</td>
+                                            <td className="whitespace-nowrap px-6 py-3 text-sm text-gray-500">{s.duration ? `${s.duration} min` : '-'}</td>
+                                            <td className="whitespace-nowrap px-6 py-3 text-sm">
+                                                {s.confirmed ? (
+                                                    <span className="text-green-600 font-medium">Yes</span>
+                                                ) : (
+                                                    <span className="text-gray-400">Pending</span>
+                                                )}
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 )}
             </>

@@ -74,7 +74,7 @@ export default function ReportsIndex({ reports, students }: Props) {
 
                 {/* Recent reports table */}
                 <h3 className="mb-3 text-lg font-semibold text-gray-800">Recent Reports</h3>
-                <div className="overflow-hidden bg-white shadow-sm sm:rounded-lg">
+                <div className="overflow-x-auto bg-white shadow-sm sm:rounded-lg">
                     <table className="min-w-full divide-y divide-gray-200">
                         <thead className="bg-gray-50">
                             <tr>

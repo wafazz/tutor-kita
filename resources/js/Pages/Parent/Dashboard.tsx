@@ -309,37 +309,39 @@ export default function ParentDashboard({ stats, upcomingSessions, activeRequest
                         <div className="flex items-center justify-between border-b px-6 py-4">
                             <h3 className="font-semibold text-gray-900">Sessions Awaiting Confirmation</h3>
                         </div>
-                        <table className="min-w-full divide-y divide-gray-200">
-                            <thead className="bg-gray-50">
-                                <tr>
-                                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Date</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Tutor</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Student</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Subject</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Duration</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Action</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-gray-200">
-                                {sessionsToConfirm.map((s) => (
-                                    <tr key={s.id} className="hover:bg-gray-50">
-                                        <td className="whitespace-nowrap px-6 py-3 text-sm text-gray-900">{s.date}</td>
-                                        <td className="whitespace-nowrap px-6 py-3 text-sm text-gray-900">{s.tutor}</td>
-                                        <td className="whitespace-nowrap px-6 py-3 text-sm text-gray-900">{s.student}</td>
-                                        <td className="whitespace-nowrap px-6 py-3 text-sm text-gray-500">{s.subject}</td>
-                                        <td className="whitespace-nowrap px-6 py-3 text-sm text-gray-500">{s.duration ? `${s.duration} min` : '-'}</td>
-                                        <td className="whitespace-nowrap px-6 py-3 text-sm">
-                                            <button
-                                                onClick={() => handleConfirm(s.id)}
-                                                className="rounded-md bg-green-600 px-3 py-1 text-xs font-medium text-white hover:bg-green-700"
-                                            >
-                                                Confirm
-                                            </button>
-                                        </td>
+                        <div className="overflow-x-auto">
+                            <table className="min-w-full divide-y divide-gray-200">
+                                <thead className="bg-gray-50">
+                                    <tr>
+                                        <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Date</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Tutor</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Student</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Subject</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Duration</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Action</th>
                                     </tr>
-                                ))}
-                            </tbody>
-                        </table>
+                                </thead>
+                                <tbody className="divide-y divide-gray-200">
+                                    {sessionsToConfirm.map((s) => (
+                                        <tr key={s.id} className="hover:bg-gray-50">
+                                            <td className="whitespace-nowrap px-6 py-3 text-sm text-gray-900">{s.date}</td>
+                                            <td className="whitespace-nowrap px-6 py-3 text-sm text-gray-900">{s.tutor}</td>
+                                            <td className="whitespace-nowrap px-6 py-3 text-sm text-gray-900">{s.student}</td>
+                                            <td className="whitespace-nowrap px-6 py-3 text-sm text-gray-500">{s.subject}</td>
+                                            <td className="whitespace-nowrap px-6 py-3 text-sm text-gray-500">{s.duration ? `${s.duration} min` : '-'}</td>
+                                            <td className="whitespace-nowrap px-6 py-3 text-sm">
+                                                <button
+                                                    onClick={() => handleConfirm(s.id)}
+                                                    className="rounded-md bg-green-600 px-3 py-1 text-xs font-medium text-white hover:bg-green-700"
+                                                >
+                                                    Confirm
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 )}
             </>

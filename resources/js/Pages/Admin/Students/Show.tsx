@@ -94,41 +94,43 @@ export default function StudentsShow({ student }: { student: StudentFull }) {
                     {student.bookings.length === 0 ? (
                         <p className="mt-2 text-sm text-gray-500">No bookings yet.</p>
                     ) : (
-                        <table className="mt-4 min-w-full divide-y divide-gray-200">
-                            <thead className="bg-gray-50">
-                                <tr>
-                                    <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Tutor</th>
-                                    <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Subject</th>
-                                    <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Schedule</th>
-                                    <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Rate (RM)</th>
-                                    <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Status</th>
-                                    <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Action</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-gray-200 bg-white">
-                                {student.bookings.map((booking) => (
-                                    <tr key={booking.id} className="hover:bg-gray-50">
-                                        <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-900">{booking.tutor.name}</td>
-                                        <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500">{booking.subject.name}</td>
-                                        <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500 capitalize">{booking.schedule_day} {booking.schedule_time}</td>
-                                        <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500">{Number(booking.hourly_rate).toFixed(2)}</td>
-                                        <td className="whitespace-nowrap px-4 py-3 text-sm">
-                                            <span className={`inline-flex rounded-full px-2 text-xs font-semibold leading-5 capitalize ${statusColors[booking.status] ?? 'bg-gray-100 text-gray-800'}`}>
-                                                {booking.status}
-                                            </span>
-                                        </td>
-                                        <td className="whitespace-nowrap px-4 py-3 text-sm">
-                                            <Link
-                                                href={route('admin.bookings.show', booking.id)}
-                                                className="text-indigo-600 hover:text-indigo-900"
-                                            >
-                                                View
-                                            </Link>
-                                        </td>
+                        <div className="mt-4 overflow-x-auto">
+                            <table className="min-w-full divide-y divide-gray-200">
+                                <thead className="bg-gray-50">
+                                    <tr>
+                                        <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Tutor</th>
+                                        <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Subject</th>
+                                        <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Schedule</th>
+                                        <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Rate (RM)</th>
+                                        <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Status</th>
+                                        <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Action</th>
                                     </tr>
-                                ))}
-                            </tbody>
-                        </table>
+                                </thead>
+                                <tbody className="divide-y divide-gray-200 bg-white">
+                                    {student.bookings.map((booking) => (
+                                        <tr key={booking.id} className="hover:bg-gray-50">
+                                            <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-900">{booking.tutor.name}</td>
+                                            <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500">{booking.subject.name}</td>
+                                            <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500 capitalize">{booking.schedule_day} {booking.schedule_time}</td>
+                                            <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500">{Number(booking.hourly_rate).toFixed(2)}</td>
+                                            <td className="whitespace-nowrap px-4 py-3 text-sm">
+                                                <span className={`inline-flex rounded-full px-2 text-xs font-semibold leading-5 capitalize ${statusColors[booking.status] ?? 'bg-gray-100 text-gray-800'}`}>
+                                                    {booking.status}
+                                                </span>
+                                            </td>
+                                            <td className="whitespace-nowrap px-4 py-3 text-sm">
+                                                <Link
+                                                    href={route('admin.bookings.show', booking.id)}
+                                                    className="text-indigo-600 hover:text-indigo-900"
+                                                >
+                                                    View
+                                                </Link>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
                     )}
                 </div>
             </div>
