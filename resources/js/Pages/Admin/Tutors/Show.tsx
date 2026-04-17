@@ -104,7 +104,7 @@ export default function TutorsShow({ tutor, reviews }: Props) {
                                     {tutor.phone ?? '-'}
                                     {tutor.phone && (
                                         <a
-                                            href={`https://wa.me/6${tutor.phone.replace(/^0/, '')}`}
+                                            href={`https://wa.me/60${tutor.phone.replace(/\D/g, '').replace(/^0/, '')}`}
                                             target="_blank"
                                             rel="noopener noreferrer"
                                             className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700 hover:bg-green-200"
