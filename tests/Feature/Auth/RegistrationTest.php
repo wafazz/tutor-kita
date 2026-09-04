@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Auth;
 
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -26,6 +27,28 @@ class RegistrationTest extends TestCase
         ]);
 
         $this->assertAuthenticated();
-        $response->assertRedirect(route('dashboard', absolute: false));
+        $response->assertRedirect('/parent/dashboard');
+
+        $this->assertSame('parent', User::where('email', 'test@example.com')->sole()->role);
+    }
+
+    public function test_new_users_can_register_as_a_tutor(): void
+    {
+        $response = $this->post('/register', [
+            'name' => 'Test Tutor',
+            'email' => 'tutor@example.com',
+            'password' => 'password',
+            'password_confirmation' => 'password',
+            'role' => 'tutor',
+        ]);
+
+        $response->assertSessionHasNoErrors();
+        $this->assertAuthenticated();
+        $response->assertRedirect('/tutor/dashboard');
+
+        $user = User::where('email', 'tutor@example.com')->sole();
+
+        $this->assertSame('tutor', $user->role);
+        $this->assertDatabaseHas('tutor_profiles', ['user_id' => $user->id]);
     }
 }

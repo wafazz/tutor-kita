@@ -117,7 +117,14 @@ class RegisteredUserController extends Controller
         ]);
 
         if ($role === 'tutor') {
-            TutorProfile::create(['user_id' => $user->id]);
+            TutorProfile::create([
+                'user_id' => $user->id,
+                'verification_status' => 'pending',
+                'subjects' => [],
+                'hourly_rate' => 0,
+                'location_area' => '',
+                'location_state' => '',
+            ]);
         }
 
         event(new Registered($user));

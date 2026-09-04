@@ -4,6 +4,7 @@ namespace Tests\Feature\Auth;
 
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
 class AuthenticationTest extends TestCase
@@ -17,9 +18,10 @@ class AuthenticationTest extends TestCase
         $response->assertStatus(200);
     }
 
-    public function test_users_can_authenticate_using_the_login_screen(): void
+    #[DataProvider('roleDashboardProvider')]
+    public function test_users_can_authenticate_using_the_login_screen(string $role, string $dashboard): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->create(['role' => $role]);
 
         $response = $this->post('/login', [
             'email' => $user->email,
@@ -27,7 +29,21 @@ class AuthenticationTest extends TestCase
         ]);
 
         $this->assertAuthenticated();
-        $response->assertRedirect(route('dashboard', absolute: false));
+        $response->assertRedirect($dashboard);
+    }
+
+    /**
+     * Login lands each role on its own dashboard.
+     *
+     * @return array<string, array{string, string}>
+     */
+    public static function roleDashboardProvider(): array
+    {
+        return [
+            'admin' => ['admin', '/admin/dashboard'],
+            'tutor' => ['tutor', '/tutor/dashboard'],
+            'parent' => ['parent', '/parent/dashboard'],
+        ];
     }
 
     public function test_users_can_not_authenticate_with_invalid_password(): void

@@ -42,4 +42,34 @@ class UserFactory extends Factory
             'email_verified_at' => null,
         ]);
     }
+
+    /**
+     * Indicate that the user is an administrator.
+     */
+    public function admin(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'role' => 'admin',
+        ]);
+    }
+
+    /**
+     * Indicate that the user is a tutor.
+     */
+    public function tutor(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'role' => 'tutor',
+        ]);
+    }
+
+    /**
+     * Indicate that the user is a parent.
+     */
+    public function parent(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'role' => 'parent',
+        ]);
+    }
 }
