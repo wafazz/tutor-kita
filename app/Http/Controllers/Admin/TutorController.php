@@ -3,10 +3,11 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Mail\TutorVerificationStatus;
+use App\Models\Review;
 use App\Models\Subject;
 use App\Models\TutorProfile;
 use App\Models\User;
-use App\Mail\TutorVerificationStatus;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
@@ -83,7 +84,7 @@ class TutorController extends Controller
     {
         $tutor->load('tutorProfile');
 
-        $reviews = \App\Models\Review::where('tutor_id', $tutor->id)
+        $reviews = Review::where('tutor_id', $tutor->id)
             ->with(['parent', 'booking.subject'])
             ->latest()
             ->limit(5)

@@ -93,16 +93,16 @@ class TutorRequestController extends Controller
                 ]));
             }
 
-            return redirect()->back()->with('success', 'Tutor requests created for ' . $package->subjects->count() . ' subjects.');
+            return redirect()->back()->with('success', 'Tutor requests created for '.$package->subjects->count().' subjects.');
         }
 
         // Single subject: use selected subject_id or the package's only subject
         $subjectId = $validated['subject_id'];
-        if (!$subjectId && $package->package_type === 'specific' && $package->subjects->count() === 1) {
+        if (! $subjectId && $package->package_type === 'specific' && $package->subjects->count() === 1) {
             $subjectId = $package->subjects->first()->id;
         }
 
-        if (!$subjectId) {
+        if (! $subjectId) {
             return redirect()->back()->withErrors(['subject_id' => 'Please select a subject.']);
         }
 
@@ -141,10 +141,12 @@ class TutorRequestController extends Controller
         if ($tutorRequest->request_group) {
             TutorRequest::where('request_group', $tutorRequest->request_group)
                 ->update(['status' => 'cancelled']);
+
             return redirect()->back()->with('success', 'All grouped requests cancelled.');
         }
 
         $tutorRequest->update(['status' => 'cancelled']);
+
         return redirect()->back()->with('success', 'Request cancelled.');
     }
 }

@@ -13,6 +13,7 @@ class Setting extends Model
     {
         return Cache::remember("setting.{$key}", 60, function () use ($key, $default) {
             $setting = static::where('key', $key)->first();
+
             return $setting ? $setting->value : $default;
         });
     }

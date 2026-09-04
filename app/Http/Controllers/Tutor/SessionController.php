@@ -8,6 +8,7 @@ use App\Models\Payment;
 use App\Models\TutorSession;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
 
@@ -71,10 +72,10 @@ class SessionController extends Controller
             'photo' => 'required|image|max:5120',
         ]);
 
-        $path = $request->file('photo')->store('proof-photos/' . $session->id, 'public');
+        $path = $request->file('photo')->store('proof-photos/'.$session->id, 'public');
 
         $photos = $session->proof_photos ?? [];
-        $photos[] = '/storage/' . $path;
+        $photos[] = '/storage/'.$path;
 
         $session->update(['proof_photos' => $photos]);
 
@@ -94,7 +95,7 @@ class SessionController extends Controller
 
         if (isset($photos[$index])) {
             $filePath = str_replace('/storage/', '', $photos[$index]);
-            \Illuminate\Support\Facades\Storage::disk('public')->delete($filePath);
+            Storage::disk('public')->delete($filePath);
             array_splice($photos, $index, 1);
             $session->update(['proof_photos' => $photos]);
         }

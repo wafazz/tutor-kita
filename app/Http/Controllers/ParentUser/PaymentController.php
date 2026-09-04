@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Models\Booking;
 use App\Models\Payment;
 use App\Models\Setting;
+use App\Models\TutorRequest;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
@@ -58,13 +60,14 @@ class PaymentController extends Controller
         $isSandbox = Setting::get('bayarcash_sandbox', '1');
 
         // If API keys not configured, fallback to manual
-        if (!$pat || !$portalKey || !$secretKey) {
+        if (! $pat || ! $portalKey || ! $secretKey) {
             $payment->update([
                 'status' => 'success',
                 'payment_method' => 'manual',
                 'paid_at' => now(),
             ]);
             $this->createBookingFromPayment($payment);
+
             return redirect()->route('parent.requests.show', $payment->tutor_request_id)
                 ->with('success', 'Payment completed (manual mode).');
         }
@@ -73,10 +76,10 @@ class PaymentController extends Controller
             ? 'https://console.bayarcash-sandbox.com/api/v2'
             : 'https://console.bayar.cash/api/v2';
 
-        $orderNo = 'TH-' . $payment->id . '-' . Str::random(6);
+        $orderNo = 'TH-'.$payment->id.'-'.Str::random(6);
         $payment->update(['transaction_id' => $orderNo]);
 
-        /** @var \App\Models\User $user */
+        /** @var User $user */
         $user = auth()->user();
         $amount = number_format((float) $payment->amount, 2, '.', '');
 
@@ -126,7 +129,7 @@ class PaymentController extends Controller
 
         $payment = Payment::where('transaction_id', $orderNo)->first();
 
-        if (!$payment) {
+        if (! $payment) {
             return redirect()->route('parent.payments.index')->with('error', 'Payment not found.');
         }
 
@@ -159,13 +162,13 @@ class PaymentController extends Controller
         }
 
         $tutorRequest = $payment->tutorRequest;
-        if (!$tutorRequest) {
+        if (! $tutorRequest) {
             return;
         }
 
         // Get all requests to create bookings for (grouped or single)
         $requests = $tutorRequest->request_group
-            ? \App\Models\TutorRequest::where('request_group', $tutorRequest->request_group)
+            ? TutorRequest::where('request_group', $tutorRequest->request_group)
                 ->where('status', 'matched')
                 ->with(['matchedTutor.tutorProfile', 'package'])
                 ->get()
@@ -175,7 +178,7 @@ class PaymentController extends Controller
 
         foreach ($requests as $req) {
             $tutor = $req->matchedTutor;
-            if (!$tutor) {
+            if (! $tutor) {
                 continue;
             }
 
@@ -198,7 +201,7 @@ class PaymentController extends Controller
                 'status' => 'confirmed',
             ]);
 
-            if (!$firstBooking) {
+            if (! $firstBooking) {
                 $firstBooking = $booking;
             }
 

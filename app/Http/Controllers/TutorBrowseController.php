@@ -21,7 +21,7 @@ class TutorBrowseController extends Controller
         }
 
         if ($request->filled('area')) {
-            $query->where('location_area', 'like', '%' . $request->input('area') . '%');
+            $query->where('location_area', 'like', '%'.$request->input('area').'%');
         }
 
         if ($request->filled('state')) {

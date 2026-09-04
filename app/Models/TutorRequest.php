@@ -56,9 +56,10 @@ class TutorRequest extends Model
 
     public function groupRequests()
     {
-        if (!$this->request_group) {
+        if (! $this->request_group) {
             return collect([$this]);
         }
+
         return static::where('request_group', $this->request_group)->get();
     }
 }

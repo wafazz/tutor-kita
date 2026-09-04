@@ -42,8 +42,8 @@ class PayoutController extends Controller
             ->map(function ($tutor) {
                 $unpaidAmount = Payment::where('status', 'success')
                     ->whereHas('booking', fn ($q) => $q->where('tutor_id', $tutor->id))
-                    ->whereDoesntHave('booking', function ($q) use ($tutor) {
-                        $q->whereHas('payments', function ($pq) use ($tutor) {
+                    ->whereDoesntHave('booking', function ($q) {
+                        $q->whereHas('payments', function ($pq) {
                             // this is just for filtering
                         });
                     })

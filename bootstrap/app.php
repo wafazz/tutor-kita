@@ -1,8 +1,12 @@
 <?php
 
+use App\Http\Middleware\EnsureRole;
+use App\Http\Middleware\EnsureTutorVerified;
+use App\Http\Middleware\HandleInertiaRequests;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Symfony\Component\HttpFoundation\Response;
@@ -15,20 +19,20 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->web(append: [
-            \App\Http\Middleware\HandleInertiaRequests::class,
-            \Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets::class,
+            HandleInertiaRequests::class,
+            AddLinkHeadersForPreloadedAssets::class,
         ]);
 
         $middleware->alias([
-            'role' => \App\Http\Middleware\EnsureRole::class,
-            'tutor.verified' => \App\Http\Middleware\EnsureTutorVerified::class,
+            'role' => EnsureRole::class,
+            'tutor.verified' => EnsureTutorVerified::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        $exceptions->respond(function (Response $response, \Throwable $e, Request $request) {
+        $exceptions->respond(function (Response $response, Throwable $e, Request $request) {
             $status = $response->getStatusCode();
 
-            if (in_array($status, [403, 404, 500, 503]) && !app()->environment(['local', 'testing'])) {
+            if (in_array($status, [403, 404, 500, 503]) && ! app()->environment(['local', 'testing'])) {
                 return Inertia::render('Error', [
                     'status' => $status,
                 ])

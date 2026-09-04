@@ -72,10 +72,12 @@ class RequestController extends Controller
 
             if ($allMatched) {
                 $this->createGroupPayment($group);
+
                 return redirect()->back()->with('success', "Assigned to {$tutor->name}. All subjects matched — payment pending from parent.");
             }
 
             $remaining = $group->where('status', 'open')->count();
+
             return redirect()->back()->with('success', "Assigned to {$tutor->name}. {$remaining} subject(s) still need tutor assignment.");
         }
 
@@ -83,7 +85,8 @@ class RequestController extends Controller
         $this->createSinglePayment($tutorRequest, $tutor);
 
         $amount = $this->calculateAmount($tutorRequest);
-        return redirect()->back()->with('success', "Request assigned to {$tutor->name}. Payment of RM " . number_format($amount, 2) . " pending from parent.");
+
+        return redirect()->back()->with('success', "Request assigned to {$tutor->name}. Payment of RM ".number_format($amount, 2).' pending from parent.');
     }
 
     private function calculateAmount(TutorRequest $tutorRequest): float
@@ -91,7 +94,7 @@ class RequestController extends Controller
         $tutorRequest->load(['subject', 'package']);
         $subject = $tutorRequest->subject;
         $package = $tutorRequest->package;
-        if (!$subject || !$package) {
+        if (! $subject || ! $package) {
             return 0;
         }
 

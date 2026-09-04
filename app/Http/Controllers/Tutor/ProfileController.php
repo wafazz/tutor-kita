@@ -38,7 +38,7 @@ class ProfileController extends Controller
             'availability' => 'nullable|array',
         ]);
 
-        if (!empty($validated['subjects'])) {
+        if (! empty($validated['subjects'])) {
             $validated['subjects'] = Subject::whereIn('id', $validated['subjects'])
                 ->pluck('name')
                 ->toArray();

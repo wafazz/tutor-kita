@@ -23,7 +23,6 @@ use App\Http\Controllers\ParentUser\SessionController as ParentSessionController
 use App\Http\Controllers\ParentUser\StudentController;
 use App\Http\Controllers\ParentUser\TutorRequestController;
 use App\Http\Controllers\ProfileController;
-use App\Http\Controllers\TutorBrowseController;
 use App\Http\Controllers\Tutor\BookingController as TutorBookingController;
 use App\Http\Controllers\Tutor\DashboardController as TutorDashboardController;
 use App\Http\Controllers\Tutor\EarningController;
@@ -32,6 +31,8 @@ use App\Http\Controllers\Tutor\ProfileController as TutorProfileController;
 use App\Http\Controllers\Tutor\ReportController as TutorReportController;
 use App\Http\Controllers\Tutor\ReviewController as TutorReviewController;
 use App\Http\Controllers\Tutor\SessionController as TutorSessionController;
+use App\Http\Controllers\TutorBrowseController;
+use App\Models\User;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -42,9 +43,10 @@ Route::get('/', function () {
 Route::get('/tutors', TutorBrowseController::class)->name('tutors.browse');
 
 Route::get('/dashboard', function () {
-    /** @var \App\Models\User $user */
+    /** @var User $user */
     $user = auth()->user();
     $role = $user->role ?? null;
+
     return match ($role) {
         'admin' => redirect('/admin/dashboard'),
         'tutor' => redirect('/tutor/dashboard'),
@@ -127,7 +129,7 @@ Route::middleware(['auth', 'verified', 'role:tutor'])->get('/tutor/pending-appro
         return redirect()->route('tutor.dashboard');
     }
 
-    return \Inertia\Inertia::render('Tutor/PendingApproval', [
+    return Inertia::render('Tutor/PendingApproval', [
         'status' => $status,
     ]);
 })->name('tutor.pending-approval');

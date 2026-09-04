@@ -59,7 +59,7 @@ class SessionController extends Controller
             'status' => 'completed',
         ]);
 
-        return back()->with('success', 'Manual check-out recorded. Duration: ' . $duration . ' minutes.');
+        return back()->with('success', 'Manual check-out recorded. Duration: '.$duration.' minutes.');
     }
 
     public function cancel(TutorSession $session)

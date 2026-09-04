@@ -38,7 +38,7 @@ class PackageController extends Controller
 
         $package = Package::create($validated);
 
-        if ($validated['package_type'] === 'specific' && !empty($subjectIds)) {
+        if ($validated['package_type'] === 'specific' && ! empty($subjectIds)) {
             $package->subjects()->sync($subjectIds);
         }
 

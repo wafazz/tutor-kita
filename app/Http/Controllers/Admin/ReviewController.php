@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Review;
+use App\Models\User;
 use Inertia\Inertia;
 
 class ReviewController extends Controller
@@ -25,7 +26,7 @@ class ReviewController extends Controller
         $review->delete();
 
         $avg = Review::where('tutor_id', $tutorId)->avg('rating');
-        $tutor = \App\Models\User::find($tutorId);
+        $tutor = User::find($tutorId);
         $tutor?->tutorProfile?->update(['rating_avg' => $avg ? round($avg, 2) : 0]);
 
         return redirect()->back()->with('success', 'Review deleted.');
