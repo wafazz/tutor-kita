@@ -14,6 +14,7 @@ type RecentEarning = {
     amount: string;
     tutor_payout: string;
     commission_amount: string;
+    accrued: number;
     student: { name: string } | null;
     subject: { name: string } | null;
     payment: { paid_at: string | null } | null;
@@ -105,8 +106,8 @@ export default function EarningsIndex({ stats, recentEarnings, payouts }: Props)
                                         </p>
                                     </div>
                                     <div className="text-right">
-                                        <p className="text-sm font-bold text-green-600">+RM {Number(p.tutor_payout).toFixed(2)}</p>
-                                        <p className="text-xs text-gray-400">of RM {Number(p.amount).toFixed(2)}</p>
+                                        <p className="text-sm font-bold text-green-600">+RM {Number(p.accrued).toFixed(2)}</p>
+                                        <p className="text-xs text-gray-400">of RM {Number(p.tutor_payout).toFixed(2)} earned</p>
                                     </div>
                                 </div>
                             ))}

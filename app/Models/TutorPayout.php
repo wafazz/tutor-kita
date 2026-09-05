@@ -32,6 +32,8 @@ class TutorPayout extends Model
      */
     public function bookings()
     {
-        return $this->hasMany(Booking::class, 'tutor_payout_id');
+        return $this->belongsToMany(Booking::class, 'booking_tutor_payout')
+            ->withPivot('amount')
+            ->withTimestamps();
     }
 }

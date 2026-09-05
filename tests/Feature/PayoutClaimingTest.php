@@ -130,12 +130,12 @@ class PayoutClaimingTest extends TestCase
 
         $payout = TutorPayout::where('tutor_id', $tutor->id)->sole();
 
-        $this->assertSame($payout->id, $booking->fresh()->tutor_payout_id);
+        // The payout records the slice it paid, and the booking's running
+        // total absorbs it so the same money cannot be paid again.
         $this->assertSame(1, $payout->bookings()->count());
-
-        // No longer offered as unpaid work.
-        $unpaid = Booking::where('tutor_id', $tutor->id)->whereNull('tutor_payout_id')->count();
-        $this->assertSame(0, $unpaid);
+        $this->assertEquals(80.00, (float) $payout->bookings()->first()->pivot->amount);
+        $this->assertEquals(80.00, (float) $booking->fresh()->paid_out_amount);
+        $this->assertEquals(0.0, $booking->fresh()->payableNow());
 
         $this->actingAs($admin)->get("/admin/payouts/{$payout->id}")->assertOk();
     }
@@ -152,8 +152,8 @@ class PayoutClaimingTest extends TestCase
         $this->assertEquals(80.00, (float) TutorPayout::where('tutor_id', $tutor->id)->sum('amount'));
 
         // A second paid booking for the same tutor, in the same window.
-        $second = $firstBooking->replicate(['tutor_payout_id']);
-        $second->tutor_payout_id = null;
+        $second = $firstBooking->replicate(['paid_out_amount']);
+        $second->paid_out_amount = 0;
         $second->save();
 
         Payment::create([

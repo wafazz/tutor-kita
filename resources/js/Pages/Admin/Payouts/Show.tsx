@@ -22,6 +22,7 @@ type PayoutBooking = {
     subject: { name: string } | null;
     payment: { paid_at: string | null } | null;
     sessions: { id: number; session_date: string; duration_minutes: number | null }[];
+    pivot: { amount: string } | null;
 };
 
 type Props = {
@@ -176,7 +177,7 @@ export default function PayoutShow({ payout, bookings }: Props) {
                                         <td className="whitespace-nowrap px-6 py-3 text-sm text-gray-500">{s.sessions.length > 0 ? `${s.sessions.length} session(s)` : '-'}</td>
                                         <td className="whitespace-nowrap px-6 py-3 text-sm text-gray-900">RM {Number(s.amount).toFixed(2)}</td>
                                         <td className="whitespace-nowrap px-6 py-3 text-sm text-gray-500">RM {Number(s.commission_amount).toFixed(2)}</td>
-                                        <td className="whitespace-nowrap px-6 py-3 text-sm font-medium text-gray-900">RM {Number(s.tutor_payout).toFixed(2)}</td>
+                                        <td className="whitespace-nowrap px-6 py-3 text-sm font-medium text-gray-900">RM {Number(s.pivot?.amount ?? s.tutor_payout).toFixed(2)}</td>
                                     </tr>
                                 ))}
                             </tbody>

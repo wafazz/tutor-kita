@@ -9,7 +9,7 @@ class Booking extends Model
     protected $fillable = [
         'tutor_request_id', 'tutor_id', 'parent_id', 'student_id', 'subject_id',
         'schedule_day', 'schedule_time', 'duration_hours', 'hourly_rate', 'commission_rate',
-        'amount', 'commission_amount', 'tutor_payout', 'payment_id', 'tutor_payout_id',
+        'amount', 'commission_amount', 'tutor_payout', 'payment_id', 'paid_out_amount',
         'location_type', 'location_address', 'status', 'notes',
     ];
 
@@ -21,6 +21,7 @@ class Booking extends Model
             'amount' => 'decimal:2',
             'commission_amount' => 'decimal:2',
             'tutor_payout' => 'decimal:2',
+            'paid_out_amount' => 'decimal:2',
             'duration_hours' => 'decimal:1',
         ];
     }
@@ -75,10 +76,58 @@ class Booking extends Model
     }
 
     /**
-     * The payout run that has committed to paying this booking, if any.
+     * Payout runs that have paid some slice of this booking. Under per_session
+     * accrual a booking is settled across several runs.
      */
-    public function tutorPayout()
+    public function tutorPayouts()
     {
-        return $this->belongsTo(TutorPayout::class, 'tutor_payout_id');
+        return $this->belongsToMany(TutorPayout::class, 'booking_tutor_payout')
+            ->withPivot('amount')
+            ->withTimestamps();
+    }
+
+    public function completedSessionsCount(): int
+    {
+        return $this->relationLoaded('sessions')
+            ? $this->sessions->where('status', 'completed')->count()
+            : $this->sessions()->where('status', 'completed')->count();
+    }
+
+    /**
+     * How much of this booking's payout the tutor has earned so far, per the
+     * package's payout policy. Independent of what has already been paid.
+     */
+    public function accruedPayout(): float
+    {
+        // Nothing accrues until the parent's payment has actually succeeded.
+        if ($this->payment?->status !== 'success') {
+            return 0.0;
+        }
+
+        $total = round((float) $this->tutor_payout, 2);
+        $package = $this->tutorRequest?->package;
+        $policy = $package->payout_policy ?? 'per_session';
+
+        if ($policy === 'upfront') {
+            return $total;
+        }
+
+        $totalSessions = max(1, (int) ($package->total_sessions ?? 1));
+        $completed = $this->completedSessionsCount();
+
+        if ($policy === 'on_completion') {
+            return $completed >= $totalSessions ? $total : 0.0;
+        }
+
+        // per_session: accrue a share per delivered session, never past the whole.
+        return round($total * (min($completed, $totalSessions) / $totalSessions), 2);
+    }
+
+    /**
+     * Earned but not yet committed to a payout run.
+     */
+    public function payableNow(): float
+    {
+        return round(max(0.0, $this->accruedPayout() - (float) $this->paid_out_amount), 2);
     }
 }

@@ -22,18 +22,41 @@ class PayoutController extends Controller
      * The period, when given, is matched on session dates via the booking —
      * payments.session_id is not populated by any flow.
      */
+    /**
+     * Bookings that may owe this tutor money.
+     *
+     * Attribution is per booking, not per payment: a grouped request raises one
+     * payment covering several tutors. How much is actually owed depends on the
+     * package's payout policy, so the amount comes from payableNow().
+     *
+     * The period, when given, is matched on session dates via the booking —
+     * payments.session_id is not populated by any flow.
+     */
     private function payableBookings(int $tutorId, ?string $periodStart = null, ?string $periodEnd = null)
     {
         return Booking::where('tutor_id', $tutorId)
-            ->whereNull('tutor_payout_id')
             ->whereHas('payment', fn ($q) => $q->where('status', 'success'))
-            ->when(
-                $periodStart && $periodEnd,
-                fn ($q) => $q->whereHas(
-                    'sessions',
-                    fn ($sq) => $sq->whereBetween('session_date', [$periodStart, $periodEnd])
-                )
-            );
+            ->with(['payment:id,status,paid_at', 'tutorRequest.package', 'sessions'])
+            ->when($periodStart && $periodEnd, function ($q) use ($periodStart, $periodEnd) {
+                // What puts a booking in a period depends on its policy: work
+                // delivered for session-based packages, the payment itself for
+                // upfront ones, which may have no sessions at all yet.
+                $q->where(function ($outer) use ($periodStart, $periodEnd) {
+                    $outer->whereHas(
+                        'sessions',
+                        fn ($sq) => $sq->whereBetween('session_date', [$periodStart, $periodEnd])
+                    )->orWhere(function ($upfront) use ($periodStart, $periodEnd) {
+                        $upfront->whereHas(
+                            'tutorRequest.package',
+                            fn ($pq) => $pq->where('payout_policy', 'upfront')
+                        )->whereHas(
+                            'payment',
+                            fn ($pq) => $pq->where('status', 'success')
+                                ->whereBetween('paid_at', [$periodStart.' 00:00:00', $periodEnd.' 23:59:59'])
+                        );
+                    });
+                });
+            });
     }
 
     public function index(Request $request)
@@ -65,8 +88,9 @@ class PayoutController extends Controller
             ->whereHas('tutorProfile', fn ($q) => $q->where('verification_status', 'verified'))
             ->get()
             ->map(function ($tutor) {
-                // Bookings not yet claimed by any payout run.
-                $unpaid = (float) $this->payableBookings($tutor->id)->sum('tutor_payout');
+                // Earned under each package's policy, less what has been paid.
+                $unpaid = $this->payableBookings($tutor->id)->get()
+                    ->sum(fn ($b) => $b->payableNow());
 
                 return [
                     'id' => $tutor->id,
@@ -91,42 +115,54 @@ class PayoutController extends Controller
             'period_end' => 'required|date|after_or_equal:period_start',
         ]);
 
-        // Select and claim under one transaction so two concurrent runs cannot
-        // both pick up the same bookings.
+        // Select and record under one transaction so two concurrent runs cannot
+        // pay the same accrual twice.
         $result = DB::transaction(function () use ($request) {
             $bookings = $this->payableBookings(
                 (int) $request->tutor_id,
                 $request->period_start,
                 $request->period_end
-            )
-                ->with(['sessions' => fn ($q) => $q->whereBetween('session_date', [$request->period_start, $request->period_end])])
-                ->lockForUpdate()
-                ->get();
+            )->lockForUpdate()->get();
 
-            if ($bookings->isEmpty()) {
+            // Only what each booking has earned and not yet been paid.
+            $slices = $bookings
+                ->map(fn ($b) => ['booking' => $b, 'amount' => $b->payableNow()])
+                ->filter(fn ($s) => $s['amount'] > 0)
+                ->values();
+
+            if ($slices->isEmpty()) {
                 return null;
             }
 
-            $amount = round((float) $bookings->sum('tutor_payout'), 2);
+            $amount = round((float) $slices->sum('amount'), 2);
 
             $payout = TutorPayout::create([
                 'tutor_id' => $request->tutor_id,
                 'amount' => $amount,
-                'sessions_count' => $bookings->sum(fn ($b) => $b->sessions->count()),
+                'sessions_count' => $slices->sum(
+                    fn ($s) => $s['booking']->sessions
+                        ->whereBetween('session_date', [$request->period_start, $request->period_end])
+                        ->count()
+                ),
                 'period_start' => $request->period_start,
                 'period_end' => $request->period_end,
                 'status' => 'pending',
             ]);
 
-            // Claim them: no later run can pay these bookings again.
-            Booking::whereIn('id', $bookings->pluck('id'))
-                ->update(['tutor_payout_id' => $payout->id]);
+            foreach ($slices as $slice) {
+                $booking = $slice['booking'];
+
+                $payout->bookings()->attach($booking->id, ['amount' => $slice['amount']]);
+
+                // Running total is the guard: this money cannot be paid again.
+                $booking->increment('paid_out_amount', $slice['amount']);
+            }
 
             return $payout;
         });
 
         if (! $result) {
-            return back()->with('error', 'No unpaid sessions found for this tutor in this period.');
+            return back()->with('error', 'Nothing has accrued for this tutor in this period.');
         }
 
         return redirect()->route('admin.payouts.index')
