@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\DeliveryMode;
 use Illuminate\Database\Eloquent\Model;
 
 class TutorRequest extends Model
@@ -11,11 +12,13 @@ class TutorRequest extends Model
         'preferred_schedule', 'preferred_time', 'preferred_tutor_gender',
         'budget_min', 'budget_max', 'notes', 'status', 'matched_tutor_id', 'matched_at',
         'tutor_accepted', 'schedule_day', 'schedule_time', 'duration_hours', 'location_type', 'location_address',
+        'delivery_mode',
     ];
 
     protected function casts(): array
     {
         return [
+            'delivery_mode' => DeliveryMode::class,
             'matched_at' => 'datetime',
             'tutor_accepted' => 'boolean',
             'duration_hours' => 'decimal:1',
@@ -80,17 +83,34 @@ class TutorRequest extends Model
             return 0.0;
         }
 
-        $homeRate = (float) $subject->hourly_rate_home;
-        $onlineRate = (float) $subject->hourly_rate_online;
+        // Rate is resolved per delivery mode, falling back down a chain rather
+        // than to zero — an unpriced mode would charge the parent nothing and
+        // earn the tutor nothing.
+        $rate = $subject->rateFor($this->deliveryMode());
 
-        // An unset online rate must not price the booking at zero — that would
-        // charge the parent nothing and earn the tutor nothing. Fall back to
-        // the home rate until a real online rate is configured.
-        $rate = ($this->preferred_location ?? 'home') === 'online'
-            ? ($onlineRate > 0 ? $onlineRate : $homeRate)
-            : $homeRate;
+        if ($rate === null) {
+            return 0.0;
+        }
 
         return $rate * (float) $package->duration_hours * (int) $package->total_sessions;
+    }
+
+    /**
+     * How this lesson is delivered.
+     *
+     * Falls back to the legacy preferred_location for rows written before
+     * delivery modes existed, so pricing never depends on the backfill having
+     * reached a given row.
+     */
+    public function deliveryMode(): DeliveryMode
+    {
+        if ($this->delivery_mode instanceof DeliveryMode) {
+            return $this->delivery_mode;
+        }
+
+        return ($this->preferred_location ?? 'home') === 'online'
+            ? DeliveryMode::OnlineSolo
+            : DeliveryMode::HomeStudent;
     }
 
     /**
