@@ -1,3 +1,4 @@
+import { usePostcodeLookup } from '@/hooks/usePostcodeLookup';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, useForm } from '@inertiajs/react';
 import { FormEventHandler } from 'react';
@@ -82,6 +83,14 @@ export default function Edit({ profile, subjects }: Props) {
         bank_account_number: profile.bank_account_number || '',
         bank_account_name: profile.bank_account_name || '',
     });
+
+    const { lookup, status: postcodeStatus } = usePostcodeLookup();
+
+    const onPostcode = (value: string) => {
+        setData('postcode', value);
+        lookup(value, ({ city, state }) =>
+            setData((current: typeof data) => ({ ...current, location_area: city, location_state: state })));
+    };
 
     const grouped = subjects.reduce<Record<string, SubjectOption[]>>((acc, s) => {
         if (!acc[s.category]) acc[s.category] = [];
@@ -294,11 +303,14 @@ export default function Edit({ profile, subjects }: Props) {
                                         <input
                                             type="text"
                                             value={data.postcode}
-                                            onChange={(e) => setData('postcode', e.target.value)}
+                                            onChange={(e) => onPostcode(e.target.value)}
                                             placeholder="e.g. 47300"
                                             className="mt-1 block w-full rounded-lg border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                                         />
                                         {errors.postcode && <p className="mt-1 text-sm text-red-600">{errors.postcode}</p>}
+                                        {postcodeStatus === 'looking' && <p className="mt-1 text-xs text-gray-400">Looking up…</p>}
+                                        {postcodeStatus === 'found' && <p className="mt-1 text-xs text-green-600">Area and state filled in for you.</p>}
+                                        {postcodeStatus === 'unknown' && <p className="mt-1 text-xs text-amber-600">We do not recognise that postcode.</p>}
                                     </div>
 
                                     <div>

@@ -25,6 +25,7 @@ use App\Http\Controllers\ParentUser\ReviewController as ParentReviewController;
 use App\Http\Controllers\ParentUser\SessionController as ParentSessionController;
 use App\Http\Controllers\ParentUser\StudentController;
 use App\Http\Controllers\ParentUser\TutorRequestController;
+use App\Http\Controllers\PostcodeLookupController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Tutor\BookingController as TutorBookingController;
 use App\Http\Controllers\Tutor\ClassController as TutorClassController;
@@ -45,6 +46,9 @@ Route::get('/', function () {
 });
 
 Route::get('/tutors', TutorBrowseController::class)->name('tutors.browse');
+
+// Address forms use this to fill city and state from a postcode.
+Route::middleware('auth')->get('/postcode-lookup', PostcodeLookupController::class)->name('postcode.lookup');
 
 Route::get('/dashboard', function () {
     /** @var User $user */

@@ -1,5 +1,6 @@
 import { Head, useForm, router } from '@inertiajs/react';
 import { useState } from 'react';
+import { usePostcodeLookup } from '@/hooks/usePostcodeLookup';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 
 type Centre = {
@@ -39,6 +40,14 @@ export default function CentresIndex({ centres, tutors, geocodingDriver }: Props
         latitude: '' as string | number,
         longitude: '' as string | number,
     });
+
+    const { lookup, status: postcodeStatus } = usePostcodeLookup();
+
+    const onPostcode = (value: string) => {
+        setData('postcode', value);
+        lookup(value, ({ city, state }) =>
+            setData((current: typeof data) => ({ ...current, area: city, state })));
+    };
 
     const startEdit = (centre: Centre) => {
         setEditing(centre);
@@ -119,8 +128,10 @@ export default function CentresIndex({ centres, tutors, geocodingDriver }: Props
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-gray-700">Postcode</label>
-                                <input type="text" value={data.postcode} onChange={(e) => setData('postcode', e.target.value)}
+                                <input type="text" value={data.postcode} onChange={(e) => onPostcode(e.target.value)}
                                     className="mt-1 block w-full rounded-lg border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500" />
+                                {postcodeStatus === 'found' && <p className="mt-1 text-xs text-green-600">Area and state filled in.</p>}
+                                {postcodeStatus === 'unknown' && <p className="mt-1 text-xs text-amber-600">Postcode not recognised.</p>}
                             </div>
                         </div>
 
