@@ -1,4 +1,5 @@
 import { usePostcodeLookup } from '@/hooks/usePostcodeLookup';
+import LocationPicker from '@/Components/LocationPicker';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, useForm } from '@inertiajs/react';
 import { FormEventHandler } from 'react';
@@ -17,6 +18,8 @@ interface TutorProfile {
     address: string | null;
     postcode: string | null;
     travel_radius_km: number | null;
+    latitude: string | null;
+    longitude: string | null;
     bank_name: string | null;
     bank_account_number: string | null;
     bank_account_name: string | null;
@@ -79,6 +82,8 @@ export default function Edit({ profile, subjects }: Props) {
         address: profile.address || '',
         postcode: profile.postcode || '',
         travel_radius_km: profile.travel_radius_km ?? '',
+        latitude: (profile.latitude ?? '') as string,
+        longitude: (profile.longitude ?? '') as string,
         bank_name: profile.bank_name || '',
         bank_account_number: profile.bank_account_number || '',
         bank_account_name: profile.bank_account_name || '',
@@ -325,6 +330,16 @@ export default function Edit({ profile, subjects }: Props) {
                                             className="mt-1 block w-full rounded-lg border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                                         />
                                         {errors.travel_radius_km && <p className="mt-1 text-sm text-red-600">{errors.travel_radius_km}</p>}
+                                    </div>
+
+                                    <div className="sm:col-span-2">
+                                        <LocationPicker
+                                            latitude={data.latitude}
+                                            longitude={data.longitude}
+                                            onChange={(lat, lng) => setData((c: typeof data) => ({ ...c, latitude: lat, longitude: lng }))}
+                                            subject="you"
+                                            error={errors.latitude ?? errors.longitude}
+                                        />
                                     </div>
                                 </div>
                             </div>

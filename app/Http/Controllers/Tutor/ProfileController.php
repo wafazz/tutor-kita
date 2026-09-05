@@ -44,6 +44,8 @@ class ProfileController extends Controller
             // How far this tutor will travel to a student's home. Null means
             // unanswered, not "will not travel".
             'travel_radius_km' => 'nullable|integer|min:0|max:200',
+            'latitude' => 'nullable|numeric|between:-90,90',
+            'longitude' => 'nullable|numeric|between:-180,180',
             'bank_name' => 'nullable|string|max:100',
             'bank_account_number' => 'nullable|string|max:34|regex:/^[A-Za-z0-9]+$/',
             'bank_account_name' => 'nullable|string|max:255',
@@ -60,7 +62,10 @@ class ProfileController extends Controller
 
         // Place the tutor so distance matching can reach them; failure leaves
         // them unplaced for geocode:backfill rather than blocking the save.
-        if (app(GeocoderManager::class)->applyTo($profile)) {
+        // A coordinate the tutor set themselves is more precise than anything
+        // geocoding would produce, so it is never overwritten.
+        if (! $request->filled(['latitude', 'longitude'])
+            && app(GeocoderManager::class)->applyTo($profile)) {
             $profile->save();
         }
 

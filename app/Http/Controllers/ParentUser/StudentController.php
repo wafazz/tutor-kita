@@ -35,6 +35,10 @@ class StudentController extends Controller
             'area' => 'nullable|string|max:255',
             'state' => 'nullable|string|max:255',
             'postcode' => 'nullable|string|max:10',
+            // Set by the parent, either by pinning or by letting the browser
+            // report where they are.
+            'latitude' => 'nullable|numeric|between:-90,90',
+            'longitude' => 'nullable|numeric|between:-180,180',
         ]);
 
         $validated['parent_id'] = auth()->id();
@@ -44,7 +48,10 @@ class StudentController extends Controller
         // Resolve the address so the student can be matched by distance; a
         // failure leaves them unplaced for the geocode:backfill command rather
         // than blocking the save.
-        if (app(GeocoderManager::class)->applyTo($student)) {
+        // A coordinate the parent set themselves is more precise than
+        // anything geocoding would produce, so it is never overwritten.
+        if (! $request->filled(['latitude', 'longitude'])
+            && app(GeocoderManager::class)->applyTo($student)) {
             $student->save();
         }
 
@@ -75,11 +82,18 @@ class StudentController extends Controller
             'area' => 'nullable|string|max:255',
             'state' => 'nullable|string|max:255',
             'postcode' => 'nullable|string|max:10',
+            // Set by the parent, either by pinning or by letting the browser
+            // report where they are.
+            'latitude' => 'nullable|numeric|between:-90,90',
+            'longitude' => 'nullable|numeric|between:-180,180',
         ]);
 
         $student->update($validated);
 
-        if (app(GeocoderManager::class)->applyTo($student)) {
+        // A coordinate the parent set themselves is more precise than
+        // anything geocoding would produce, so it is never overwritten.
+        if (! $request->filled(['latitude', 'longitude'])
+            && app(GeocoderManager::class)->applyTo($student)) {
             $student->save();
         }
 

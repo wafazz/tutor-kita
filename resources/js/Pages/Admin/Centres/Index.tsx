@@ -1,6 +1,7 @@
 import { Head, useForm, router } from '@inertiajs/react';
 import { useState } from 'react';
 import { usePostcodeLookup } from '@/hooks/usePostcodeLookup';
+import LocationPicker from '@/Components/LocationPicker';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 
 type Centre = {
@@ -159,28 +160,13 @@ export default function CentresIndex({ centres, tutors, geocodingDriver }: Props
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-2 gap-3">
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700">Latitude</label>
-                                <input type="number" step="any" value={data.latitude}
-                                    onChange={(e) => setData('latitude', e.target.value)}
-                                    placeholder="3.1390"
-                                    className="mt-1 block w-full rounded-lg border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500" />
-                                {errors.latitude && <p className="mt-1 text-sm text-red-600">{errors.latitude}</p>}
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700">Longitude</label>
-                                <input type="number" step="any" value={data.longitude}
-                                    onChange={(e) => setData('longitude', e.target.value)}
-                                    placeholder="101.6869"
-                                    className="mt-1 block w-full rounded-lg border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500" />
-                                {errors.longitude && <p className="mt-1 text-sm text-red-600">{errors.longitude}</p>}
-                            </div>
-                        </div>
-                        <p className="text-xs text-gray-500">
-                            Leave coordinates blank to let geocoding resolve the address. With the manual driver
-                            they must be entered here.
-                        </p>
+                        <LocationPicker
+                            latitude={data.latitude}
+                            longitude={data.longitude}
+                            onChange={(lat, lng) => setData((c: typeof data) => ({ ...c, latitude: lat, longitude: lng }))}
+                            subject="this centre"
+                            error={errors.latitude ?? errors.longitude}
+                        />
 
                         <label className="flex items-center gap-2 text-sm text-gray-700">
                             <input type="checkbox" checked={data.is_active}

@@ -1,4 +1,5 @@
 import { usePostcodeLookup } from '@/hooks/usePostcodeLookup';
+import LocationPicker from '@/Components/LocationPicker';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, Link, useForm } from '@inertiajs/react';
 import { FormEventHandler } from 'react';
@@ -14,6 +15,8 @@ type Student = {
     area: string | null;
     state: string | null;
     postcode: string | null;
+    latitude: string | null;
+    longitude: string | null;
 };
 
 const EDUCATION_LEVELS = ['UPSR', 'PT3', 'SPM', 'STPM', 'Diploma', 'Degree', 'Other'];
@@ -29,6 +32,8 @@ export default function StudentsEdit({ student }: { student: Student }) {
         area: student.area ?? '',
         state: student.state ?? '',
         postcode: student.postcode ?? '',
+        latitude: (student.latitude ?? '') as string,
+        longitude: (student.longitude ?? '') as string,
     });
 
     const { lookup, status: postcodeStatus } = usePostcodeLookup();
@@ -182,6 +187,16 @@ export default function StudentsEdit({ student }: { student: Student }) {
                                         />
                                         {errors.state && <p className="mt-1 text-sm text-red-600">{errors.state}</p>}
                                     </div>
+
+                                <div className="sm:col-span-2">
+                                    <LocationPicker
+                                        latitude={data.latitude}
+                                        longitude={data.longitude}
+                                        onChange={(lat, lng) => setData((c: typeof data) => ({ ...c, latitude: lat, longitude: lng }))}
+                                        subject="this student"
+                                        error={errors.latitude ?? errors.longitude}
+                                    />
+                                </div>
                                 </div>
                             </div>
 
