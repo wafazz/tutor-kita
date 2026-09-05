@@ -2,7 +2,7 @@
 
 namespace App\Support\Geocoding\Drivers;
 
-use App\Models\PostcodeCentroid;
+use App\Models\Postcode;
 use App\Support\Geocoding\Coordinates;
 use App\Support\Geocoding\Geocoder;
 
@@ -23,15 +23,18 @@ class PostcodeGeocoder implements Geocoder
             return null;
         }
 
-        $centroid = PostcodeCentroid::where('postcode', $postcode)->first();
+        $entry = Postcode::lookup($postcode);
 
-        if (! $centroid) {
+        // The directory maps a postcode to a city and state, not to a point.
+        // Without coordinates there is nothing to resolve, and guessing one
+        // would place someone wrongly rather than leaving them unplaced.
+        if (! $entry || ! $entry->hasCoordinates()) {
             return null;
         }
 
         return new Coordinates(
-            (float) $centroid->latitude,
-            (float) $centroid->longitude,
+            (float) $entry->latitude,
+            (float) $entry->longitude,
             source: 'postcode',
             accuracyKm: 3.0,
         );

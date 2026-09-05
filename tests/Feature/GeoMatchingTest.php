@@ -5,7 +5,7 @@ namespace Tests\Feature;
 use App\Enums\DeliveryMode;
 use App\Models\Centre;
 use App\Models\Package;
-use App\Models\PostcodeCentroid;
+use App\Models\Postcode;
 use App\Models\Setting;
 use App\Models\Student;
 use App\Models\Subject;
@@ -169,7 +169,7 @@ class GeoMatchingTest extends TestCase
     public function test_the_postcode_driver_resolves_from_the_local_table(): void
     {
         Setting::set('geocoding_driver', 'postcode');
-        PostcodeCentroid::create(['postcode' => '46000', 'area' => 'PJ', 'state' => 'Selangor',
+        Postcode::create(['postcode' => '46000', 'city' => 'PJ', 'state' => 'Selangor',
             'latitude' => self::PJ[0], 'longitude' => self::PJ[1]]);
 
         $result = (new GeocoderManager)->geocode('12 Jalan Something, 46000 Petaling Jaya');

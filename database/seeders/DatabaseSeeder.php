@@ -17,6 +17,8 @@ class DatabaseSeeder extends Seeder
 
     public function run(): void
     {
+        $this->call(PostcodeSeeder::class);
+
         // Admin
         User::create([
             'name' => 'Admin TutorHUB',

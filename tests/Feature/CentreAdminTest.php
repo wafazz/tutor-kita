@@ -3,7 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Centre;
-use App\Models\PostcodeCentroid;
+use App\Models\Postcode;
 use App\Models\Setting;
 use App\Models\Student;
 use App\Models\TutorProfile;
@@ -69,7 +69,7 @@ class CentreAdminTest extends TestCase
     public function test_a_centre_is_geocoded_on_save_when_a_driver_is_configured(): void
     {
         Setting::set('geocoding_driver', 'postcode');
-        PostcodeCentroid::create(['postcode' => '46000', 'latitude' => 3.1073, 'longitude' => 101.6067]);
+        Postcode::create(['postcode' => '46000', 'city' => 'Test City', 'state' => 'Selangor', 'latitude' => 3.1073, 'longitude' => 101.6067]);
 
         $this->actingAs($this->admin())->post('/admin/centres', [
             'name' => 'Auto', 'address' => '4 Jalan D', 'postcode' => '46000',
@@ -100,7 +100,7 @@ class CentreAdminTest extends TestCase
     public function test_a_parent_can_save_a_student_address_and_it_is_geocoded(): void
     {
         Setting::set('geocoding_driver', 'postcode');
-        PostcodeCentroid::create(['postcode' => '46000', 'latitude' => 3.1073, 'longitude' => 101.6067]);
+        Postcode::create(['postcode' => '46000', 'city' => 'Test City', 'state' => 'Selangor', 'latitude' => 3.1073, 'longitude' => 101.6067]);
 
         $parent = User::factory()->parent()->create();
 
@@ -118,7 +118,7 @@ class CentreAdminTest extends TestCase
     public function test_a_tutor_can_save_their_address_and_travel_radius(): void
     {
         Setting::set('geocoding_driver', 'postcode');
-        PostcodeCentroid::create(['postcode' => '47300', 'latitude' => 3.1073, 'longitude' => 101.6067]);
+        Postcode::create(['postcode' => '47300', 'city' => 'Test City', 'state' => 'Selangor', 'latitude' => 3.1073, 'longitude' => 101.6067]);
 
         $tutor = User::factory()->tutor()->create();
         TutorProfile::create([
