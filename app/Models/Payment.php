@@ -10,6 +10,7 @@ class Payment extends Model
     protected $fillable = [
         'tutor_request_id', 'booking_id', 'session_id', 'parent_id', 'amount', 'commission_amount',
         'tutor_payout', 'payment_method', 'gateway', 'transaction_id', 'status', 'paid_at',
+        'refunded_amount', 'refunded_at',
     ];
 
     protected function casts(): array
@@ -19,6 +20,8 @@ class Payment extends Model
             'commission_amount' => 'decimal:2',
             'tutor_payout' => 'decimal:2',
             'paid_at' => 'datetime',
+            'refunded_amount' => 'decimal:2',
+            'refunded_at' => 'datetime',
         ];
     }
 

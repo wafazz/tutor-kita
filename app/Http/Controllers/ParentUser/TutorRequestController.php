@@ -4,6 +4,7 @@ namespace App\Http\Controllers\ParentUser;
 
 use App\Http\Controllers\Controller;
 use App\Models\Package;
+use App\Models\Payment;
 use App\Models\Student;
 use App\Models\Subject;
 use App\Models\TutorRequest;
@@ -136,6 +137,23 @@ class TutorRequestController extends Controller
     public function cancel(TutorRequest $tutorRequest)
     {
         abort_unless($tutorRequest->parent_id === auth()->id(), 403);
+
+        // Once a request has been paid for there is a booking, sessions, money
+        // with the platform and possibly money already sent to the tutor.
+        // Deciding all of that is a refund decision, not a status change, so it
+        // does not happen from here.
+        $group = $tutorRequest->request_group
+            ? TutorRequest::where('request_group', $tutorRequest->request_group)->pluck('id')
+            : collect([$tutorRequest->id]);
+
+        $settled = Payment::whereIn('tutor_request_id', $group)
+            ->where('status', 'success')
+            ->exists();
+
+        if ($settled) {
+            return redirect()->back()->with('error',
+                'This request has already been paid for. Ask an administrator to cancel it, so the refund and the tutor\'s share are settled properly.');
+        }
 
         // Cancel all requests in the group
         if ($tutorRequest->request_group) {

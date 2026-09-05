@@ -101,6 +101,7 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('ad
     Route::post('/requests/{tutorRequest}/match', [AdminRequestController::class, 'match'])->name('requests.match');
 
     Route::get('/bookings', [AdminBookingController::class, 'index'])->name('bookings.index');
+    Route::post('/bookings/{booking}/cancel', [AdminBookingController::class, 'cancel'])->name('bookings.cancel');
     Route::get('/bookings/{booking}', [AdminBookingController::class, 'show'])->name('bookings.show');
 
     Route::get('/sessions', [AdminSessionController::class, 'index'])->name('sessions.index');

@@ -10,6 +10,7 @@ class Booking extends Model
         'tutor_request_id', 'tutor_id', 'parent_id', 'student_id', 'subject_id',
         'schedule_day', 'schedule_time', 'duration_hours', 'hourly_rate', 'commission_rate',
         'amount', 'commission_amount', 'tutor_payout', 'payment_id', 'paid_out_amount',
+        'cancellation_reason', 'cancelled_at',
         'location_type', 'location_address', 'status', 'notes',
     ];
 
@@ -22,6 +23,7 @@ class Booking extends Model
             'commission_amount' => 'decimal:2',
             'tutor_payout' => 'decimal:2',
             'paid_out_amount' => 'decimal:2',
+            'cancelled_at' => 'datetime',
             'duration_hours' => 'decimal:1',
         ];
     }
