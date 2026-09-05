@@ -9,6 +9,7 @@ use App\Models\Centre;
 use App\Models\ClassSession;
 use App\Models\Subject;
 use App\Models\User;
+use App\Support\ScheduleConflictDetector;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -36,14 +37,27 @@ class ClassSessionController extends Controller
 
     public function store(Request $request)
     {
-        ClassSession::create($this->validated($request));
+        $validated = $this->validated($request);
+
+        if ($clash = $this->firstScheduleClash($validated)) {
+            return redirect()->back()->with('error', $clash);
+        }
+
+        ClassSession::create($validated);
 
         return redirect()->back()->with('success', 'Class created.');
     }
 
     public function update(Request $request, ClassSession $class)
     {
-        $class->update($this->validated($request));
+        $validated = $this->validated($request);
+
+        // Ignore this class when checking, or it would clash with itself.
+        if ($clash = $this->firstScheduleClash($validated, $class->id)) {
+            return redirect()->back()->with('error', $clash);
+        }
+
+        $class->update($validated);
 
         return redirect()->back()->with('success', 'Class updated.');
     }
@@ -57,6 +71,28 @@ class ClassSessionController extends Controller
         $class->delete();
 
         return redirect()->back()->with('success', 'Class removed.');
+    }
+
+    /**
+     * Why this tutor cannot teach the proposed class, or null when they can.
+     */
+    private function firstScheduleClash(array $validated, ?int $ignoreClassId = null): ?string
+    {
+        $tutor = User::find($validated['tutor_id']);
+        $centre = isset($validated['centre_id']) ? Centre::find($validated['centre_id']) : null;
+
+        $conflicts = app(ScheduleConflictDetector::class)->check(
+            tutorId: (int) $validated['tutor_id'],
+            day: $validated['schedule_day'] ?? null,
+            time: $validated['schedule_time'] ?? null,
+            durationHours: (float) $validated['duration_hours'],
+            mode: DeliveryMode::from($validated['delivery_mode']),
+            latitude: $centre?->latitude,
+            longitude: $centre?->longitude,
+            ignoreClassId: $ignoreClassId,
+        );
+
+        return $conflicts->isEmpty() ? null : $conflicts->first()->message($tutor?->name ?? 'That tutor');
     }
 
     private function present(ClassSession $c): array

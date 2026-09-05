@@ -8,6 +8,7 @@ use App\Models\Setting;
 use App\Models\Subject;
 use App\Models\TutorRequest;
 use App\Models\User;
+use App\Support\ScheduleConflictDetector;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -60,6 +61,12 @@ class RequestController extends Controller
 
         $tutor = User::findOrFail($validated['matched_tutor_id']);
 
+        // A tutor cannot be in two places at once, and cannot cross town
+        // between back-to-back lessons either.
+        if ($clash = $this->firstScheduleClash($tutorRequest, $tutor)) {
+            return redirect()->back()->with('error', $clash);
+        }
+
         $tutorRequest->update([
             'status' => 'matched',
             'matched_tutor_id' => $validated['matched_tutor_id'],
@@ -98,6 +105,26 @@ class RequestController extends Controller
         $amount = $tutorRequest->calculateAmount();
 
         return redirect()->back()->with('success', "Request assigned to {$tutor->name}. Payment of RM ".number_format($amount, 2).' pending from parent.');
+    }
+
+    /**
+     * Why this tutor cannot take this request's slot, or null when they can.
+     */
+    private function firstScheduleClash(TutorRequest $tutorRequest, User $tutor): ?string
+    {
+        $tutorRequest->loadMissing('student');
+
+        $conflicts = app(ScheduleConflictDetector::class)->check(
+            tutorId: $tutor->id,
+            day: $tutorRequest->schedule_day,
+            time: $tutorRequest->schedule_time,
+            durationHours: (float) ($tutorRequest->duration_hours ?? $tutorRequest->package?->duration_hours ?? 1),
+            mode: $tutorRequest->deliveryMode(),
+            latitude: $tutorRequest->student?->latitude,
+            longitude: $tutorRequest->student?->longitude,
+        );
+
+        return $conflicts->isEmpty() ? null : $conflicts->first()->message($tutor->name);
     }
 
     /**
