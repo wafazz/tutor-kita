@@ -109,6 +109,9 @@ class StudentClashTest extends TestCase
 
         $this->assertStringContainsString('Ali', $error);
         $this->assertStringContainsString('Maths lesson', $error);
+        // A student attends a lesson; they do not teach it.
+        $this->assertStringContainsString('already has', $error);
+        $this->assertStringNotContainsString('teaches', $error);
     }
 
     public function test_a_student_cannot_join_two_classes_at_the_same_time(): void

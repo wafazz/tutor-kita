@@ -13,13 +13,26 @@ final class ScheduleConflict
         public readonly ?string $earliestStart = null,
     ) {}
 
-    public function message(string $tutorName): string
+    /**
+     * The same clash reads differently depending on whose diary it is: a tutor
+     * teaches a lesson, a student attends one.
+     */
+    public function message(string $name, bool $isTutor = true): string
     {
+        $present = $isTutor ? 'teaches' : 'has';
+        $already = $isTutor ? 'already teaches' : 'already has';
+
         if ($this->kind === 'travel') {
-            return "{$tutorName} teaches {$this->what} at {$this->when} and needs about "
+            return "{$name} {$present} {$this->what} at {$this->when} and needs about "
                 ."{$this->travelMinutes} minutes to travel between the two — the earliest realistic start is {$this->earliestStart}.";
         }
 
-        return "{$tutorName} already teaches {$this->what} at {$this->when}.";
+        return "{$name} {$already} {$this->what} at {$this->when}.";
+    }
+
+    /** Phrased for the student rather than the tutor. */
+    public function messageForStudent(string $name): string
+    {
+        return $this->message($name, isTutor: false);
     }
 }

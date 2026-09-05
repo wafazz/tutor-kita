@@ -27,6 +27,7 @@ use App\Http\Controllers\ParentUser\StudentController;
 use App\Http\Controllers\ParentUser\TutorRequestController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Tutor\BookingController as TutorBookingController;
+use App\Http\Controllers\Tutor\ClassController as TutorClassController;
 use App\Http\Controllers\Tutor\DashboardController as TutorDashboardController;
 use App\Http\Controllers\Tutor\EarningController;
 use App\Http\Controllers\Tutor\JobController;
@@ -150,6 +151,7 @@ Route::middleware(['auth', 'verified', 'role:tutor'])->get('/tutor/pending-appro
 // Tutor routes
 Route::middleware(['auth', 'verified', 'role:tutor', 'tutor.verified'])->prefix('tutor')->name('tutor.')->group(function () {
     Route::get('/dashboard', TutorDashboardController::class)->name('dashboard');
+    Route::get('/classes', [TutorClassController::class, 'index'])->name('classes.index');
 
     Route::get('/profile', [TutorProfileController::class, 'edit'])->name('profile.edit');
     Route::put('/profile', [TutorProfileController::class, 'update'])->name('profile.update');

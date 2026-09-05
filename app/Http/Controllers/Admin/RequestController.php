@@ -141,7 +141,7 @@ class RequestController extends Controller
             )->first();
 
             if ($studentClash) {
-                return $studentClash->message($tutorRequest->student->name);
+                return $studentClash->messageForStudent($tutorRequest->student->name);
             }
         }
 

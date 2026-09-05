@@ -50,7 +50,7 @@ class ClassEnroller
             )->first();
 
             if ($clash) {
-                throw new \RuntimeException($clash->message($student->name));
+                throw new \RuntimeException($clash->messageForStudent($student->name));
             }
 
             $price = $class->priceForStudent();
