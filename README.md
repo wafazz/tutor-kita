@@ -243,6 +243,36 @@ Parent creates a request
 Group classes join at the booking step: enrolling creates that student's own booking and
 payment, and everything downstream is identical.
 
+## Deploying
+
+Production needs settings that differ from development, and the ones that are
+merely convenient locally are the ones that leak. Rather than a checklist to
+remember, this is checked:
+
+```bash
+php artisan app:check-production
+```
+
+It exits non-zero on anything that would expose data or take money incorrectly
+— debug mode on, a development URL, manual payment mode still enabled, a
+missing gateway signature key — and warns about the softer ones. Add it as a
+deploy step so a release stops rather than a problem shipping.
+
+Required in production:
+
+| Setting | Value |
+|---------|-------|
+| `APP_ENV` | `production` |
+| `APP_DEBUG` | `false` |
+| `APP_URL` | your real https domain |
+| `LOG_LEVEL` | `error` (not `debug`) |
+| Billplz environment | Live, with live keys and collection |
+| Manual payment mode | Off |
+
+The gateway callback URL is written into each bill when it is created, so the
+domain must be stable and publicly reachable before you take real payments.
+A tunnel is fine for testing and not for production.
+
 ## Notes
 
 - **Geocoding is off by default.** Distance features work from coordinates people set
