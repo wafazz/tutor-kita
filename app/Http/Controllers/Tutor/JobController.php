@@ -6,7 +6,9 @@ use App\Enums\DeliveryMode;
 use App\Http\Controllers\Controller;
 use App\Models\TutorRequest;
 use App\Support\ScheduleConflictDetector;
+use App\Support\TutorEligibility;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 
 class JobController extends Controller
@@ -95,24 +97,55 @@ class JobController extends Controller
             'location_address' => 'nullable|string|max:500',
         ]);
 
-        // The tutor chooses the schedule here, so this — not the earlier
-        // match — is the first moment there is a time to check. Anything
-        // validated at matching was validated against a different, often
-        // empty, schedule.
-        if ($clash = $this->firstClash($tutorRequest, $validated)) {
-            return redirect()->back()->with('error', $clash);
-        }
+        // Accepting is a state change, so everything is rechecked and committed
+        // together. Validating and then updating separately leaves room for the
+        // state to move in between — another job accepted in the same moment,
+        // or a verification revoked.
+        $outcome = DB::transaction(function () use ($tutorRequest, $validated) {
+            $tutorRequest = TutorRequest::whereKey($tutorRequest->getKey())
+                ->lockForUpdate()
+                ->with(['student', 'subject'])
+                ->firstOrFail();
 
-        $tutorRequest->update([
-            'tutor_accepted' => true,
-            'schedule_day' => $validated['schedule_day'],
-            'schedule_time' => $validated['schedule_time'],
-            'duration_hours' => $validated['duration_hours'],
-            'location_type' => $validated['location_type'],
-            'location_address' => $validated['location_address'] ?? null,
-        ]);
+            if ($tutorRequest->status !== 'matched') {
+                return 'This request is no longer open for acceptance.';
+            }
 
-        return redirect()->back()->with('success', 'Job accepted. Waiting for parent payment.');
+            if ($tutorRequest->tutor_accepted) {
+                return 'You have already accepted this job.';
+            }
+
+            $tutor = auth()->user();
+
+            // Matching happened earlier, and eligibility can lapse: a
+            // verification can be revoked, or a subject removed from a profile.
+            $assessment = app(TutorEligibility::class)->assess($tutor, $tutorRequest);
+
+            if (! $assessment['eligible']) {
+                return 'You can no longer take this job: '.implode('; ', $assessment['blockers']).'.';
+            }
+
+            // The tutor chooses the schedule here, so this — not the earlier
+            // match — is the first moment there is a time to check.
+            if ($clash = $this->firstClash($tutorRequest, $validated)) {
+                return $clash;
+            }
+
+            $tutorRequest->update([
+                'tutor_accepted' => true,
+                'schedule_day' => $validated['schedule_day'],
+                'schedule_time' => $validated['schedule_time'],
+                'duration_hours' => $validated['duration_hours'],
+                'location_type' => $validated['location_type'],
+                'location_address' => $validated['location_address'] ?? null,
+            ]);
+
+            return null;
+        });
+
+        return $outcome
+            ? redirect()->back()->with('error', $outcome)
+            : redirect()->back()->with('success', 'Job accepted. Waiting for parent payment.');
     }
 
     public function reject(TutorRequest $tutorRequest)

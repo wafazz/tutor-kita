@@ -43,7 +43,7 @@ class AuditP0Test extends TestCase
 
         $this->tutor = User::factory()->tutor()->create(['name' => 'Cikgu A']);
         TutorProfile::create([
-            'user_id' => $this->tutor->id, 'subjects' => [], 'hourly_rate' => 50,
+            'user_id' => $this->tutor->id, 'subjects' => ['Maths'], 'hourly_rate' => 50,
             'location_area' => 'PJ', 'location_state' => 'Sel',
             'verification_status' => 'verified', 'commission_rate' => 20,
             'latitude' => 3.1073, 'longitude' => 101.6067,
@@ -198,5 +198,51 @@ class AuditP0Test extends TestCase
         ]);
 
         $this->acceptJob($job, 'wednesday', '10:00')->assertSessionHas('error');
+    }
+
+    // ---- section 14: acceptance guards ----
+
+    public function test_a_tutor_whose_verification_lapsed_cannot_accept(): void
+    {
+        $job = $this->openJob();
+
+        // Matching happened earlier; eligibility can lapse in between.
+        $this->tutor->tutorProfile->update(['verification_status' => 'rejected']);
+
+        // Refused before the controller by the verification middleware, so the
+        // outcome is what matters here rather than which layer stopped it.
+        $this->acceptJob($job, 'tuesday', '14:00');
+
+        $this->assertFalse((bool) $job->fresh()->tutor_accepted);
+    }
+
+    public function test_a_tutor_who_no_longer_teaches_the_subject_cannot_accept(): void
+    {
+        $job = $this->openJob();
+
+        $this->tutor->tutorProfile->update(['subjects' => ['Physics']]);
+
+        $this->acceptJob($job, 'tuesday', '14:00')->assertSessionHas('error');
+    }
+
+    public function test_a_job_cannot_be_accepted_twice(): void
+    {
+        $job = $this->openJob();
+
+        $this->acceptJob($job, 'tuesday', '14:00')->assertSessionHasNoErrors();
+        $this->acceptJob($job->fresh(), 'wednesday', '09:00')->assertSessionHas('error');
+
+        // The second attempt did not overwrite the agreed schedule.
+        $this->assertSame('tuesday', $job->fresh()->schedule_day);
+    }
+
+    public function test_a_cancelled_request_cannot_be_accepted(): void
+    {
+        $job = $this->openJob();
+        $job->update(['status' => 'cancelled']);
+
+        $this->acceptJob($job, 'tuesday', '14:00')->assertSessionHas('error');
+
+        $this->assertFalse((bool) $job->fresh()->tutor_accepted);
     }
 }
