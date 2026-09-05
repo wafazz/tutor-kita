@@ -66,9 +66,8 @@ class PaymentController extends Controller
                 'payment_method' => 'manual',
                 'paid_at' => now(),
             ]);
-            $this->createBookingFromPayment($payment);
 
-            return redirect()->route('parent.requests.show', $payment->tutor_request_id)
+            return $this->completePayment($payment)
                 ->with('success', 'Payment completed (manual mode).');
         }
 
@@ -143,16 +142,40 @@ class PaymentController extends Controller
                 'paid_at' => now(),
             ]);
 
-            $this->createBookingFromPayment($payment);
-
-            return redirect()->route('parent.requests.show', $payment->tutor_request_id)
-                ->with('success', 'Payment successful! Your booking has been created.');
+            return $this->completePayment($payment);
         }
 
         $payment->update(['status' => 'failed']);
 
+        return $payment->tutor_request_id
+            ? redirect()->route('parent.requests.show', $payment->tutor_request_id)
+                ->with('error', 'Payment failed. Please try again.')
+            : redirect()->route('parent.payments.index')
+                ->with('error', 'Payment failed. Please try again.');
+    }
+
+    /**
+     * Finish a successful payment, whichever kind it is.
+     *
+     * A seat in a group class already has its booking — it was created when
+     * the student enrolled — so building one from a tutor request would be
+     * wrong, and there is no request to redirect back to either.
+     */
+    private function completePayment(Payment $payment)
+    {
+        $enrolment = $payment->enrolment;
+
+        if ($enrolment) {
+            $enrolment->update(['status' => 'active']);
+
+            return redirect()->route('parent.classes.show', $enrolment->class_session_id)
+                ->with('success', 'Payment successful — the seat is confirmed.');
+        }
+
+        $this->createBookingFromPayment($payment);
+
         return redirect()->route('parent.requests.show', $payment->tutor_request_id)
-            ->with('error', 'Payment failed. Please try again.');
+            ->with('success', 'Payment successful! Your booking has been created.');
     }
 
     private function createBookingFromPayment(Payment $payment): void

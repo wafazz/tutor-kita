@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\BookingController as AdminBookingController;
 use App\Http\Controllers\Admin\CentreController;
+use App\Http\Controllers\Admin\ClassSessionController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\HqProfileController;
 use App\Http\Controllers\Admin\PackageController;
@@ -16,6 +17,7 @@ use App\Http\Controllers\Admin\StudentController as AdminStudentController;
 use App\Http\Controllers\Admin\SubjectController;
 use App\Http\Controllers\Admin\TutorController as AdminTutorController;
 use App\Http\Controllers\ParentUser\BookingController as ParentBookingController;
+use App\Http\Controllers\ParentUser\ClassBrowseController;
 use App\Http\Controllers\ParentUser\DashboardController as ParentDashboardController;
 use App\Http\Controllers\ParentUser\PaymentController as ParentPaymentController;
 use App\Http\Controllers\ParentUser\ReportController as ParentReportController;
@@ -67,6 +69,11 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('ad
     Route::get('/dashboard', AdminDashboardController::class)->name('dashboard');
 
     Route::resource('subjects', SubjectController::class);
+
+    Route::get('/classes', [ClassSessionController::class, 'index'])->name('classes.index');
+    Route::post('/classes', [ClassSessionController::class, 'store'])->name('classes.store');
+    Route::put('/classes/{class}', [ClassSessionController::class, 'update'])->name('classes.update');
+    Route::delete('/classes/{class}', [ClassSessionController::class, 'destroy'])->name('classes.destroy');
 
     Route::get('/centres', [CentreController::class, 'index'])->name('centres.index');
     Route::post('/centres', [CentreController::class, 'store'])->name('centres.store');
@@ -174,6 +181,10 @@ Route::middleware(['auth', 'verified', 'role:tutor', 'tutor.verified'])->prefix(
 
 // Parent routes
 Route::middleware(['auth', 'verified', 'role:parent'])->prefix('parent')->name('parent.')->group(function () {
+
+    Route::get('/classes', [ClassBrowseController::class, 'index'])->name('classes.index');
+    Route::get('/classes/{class}', [ClassBrowseController::class, 'show'])->name('classes.show');
+    Route::post('/classes/{class}/enrol', [ClassBrowseController::class, 'enrol'])->name('classes.enrol');
     Route::get('/dashboard', ParentDashboardController::class)->name('dashboard');
 
     Route::resource('students', StudentController::class);

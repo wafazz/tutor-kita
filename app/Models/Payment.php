@@ -118,4 +118,15 @@ class Payment extends Model
             ])->save();
         }
     }
+
+    /** Set when this payment buys a seat in a group class. */
+    public function enrolment()
+    {
+        return $this->hasOne(ClassEnrolment::class);
+    }
+
+    public function isForClassEnrolment(): bool
+    {
+        return $this->enrolment()->exists();
+    }
 }
