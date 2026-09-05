@@ -7,6 +7,8 @@ use App\Models\ClassEnrolment;
 use App\Models\ClassSession;
 use App\Models\Payment;
 use App\Models\Student;
+use App\Models\TutorSession;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -78,6 +80,12 @@ class ClassEnroller
                 'status' => 'pending',
             ]);
 
+            // A class runs on a schedule, so the sessions it implies exist from
+            // the moment a seat is taken. Without them the booking looks like
+            // nothing was ever delivered, and the tutor accrues nothing however
+            // much the class owes them.
+            $this->scheduleSessions($class, $booking);
+
             $this->settle($class->fresh());
 
             return $enrolment->fresh();
@@ -137,5 +145,51 @@ class ClassEnroller
             $enrolment->update(['status' => 'cancelled']);
             $this->settle($enrolment->classSession->fresh());
         });
+    }
+
+    /**
+     * Lay out this student's sessions across the run of the class.
+     *
+     * One per week from the start date, which is what "10 weekly sessions"
+     * means in practice. They are created as scheduled, not completed —
+     * delivery is still recorded by the tutor as normal.
+     */
+    private function scheduleSessions(ClassSession $class, Booking $booking): void
+    {
+        $start = $class->starts_on
+            ? Carbon::parse($class->starts_on)
+            : $this->nextOccurrence($class->schedule_day);
+
+        $startTime = substr((string) ($class->schedule_time ?? '10:00'), 0, 5);
+        $endTime = Carbon::parse($startTime)->addMinutes((int) round((float) $class->duration_hours * 60))->format('H:i');
+
+        for ($i = 0; $i < max(1, (int) $class->total_sessions); $i++) {
+            TutorSession::create([
+                'booking_id' => $booking->id,
+                'session_date' => $start->copy()->addWeeks($i)->toDateString(),
+                'start_time' => $startTime,
+                'end_time' => $endTime,
+                'check_in_token' => bin2hex(random_bytes(8)),
+                'duration_minutes' => (int) round((float) $class->duration_hours * 60),
+                'status' => 'scheduled',
+            ]);
+        }
+    }
+
+    /** The next date falling on the class's weekday, today included. */
+    private function nextOccurrence(?string $day): Carbon
+    {
+        if (blank($day)) {
+            return Carbon::today();
+        }
+
+        $target = Carbon::parse($day)->dayOfWeek;
+        $date = Carbon::today();
+
+        while ($date->dayOfWeek !== $target) {
+            $date->addDay();
+        }
+
+        return $date;
     }
 }

@@ -86,6 +86,12 @@ class Booking extends Model
             ->withTimestamps();
     }
 
+    /** Set when this booking is a seat in a group class. */
+    public function classEnrolment()
+    {
+        return $this->hasOne(ClassEnrolment::class);
+    }
+
     public function completedSessionsCount(): int
     {
         return $this->relationLoaded('sessions')
@@ -106,13 +112,20 @@ class Booking extends Model
 
         $total = round((float) $this->tutor_payout, 2);
         $package = $this->tutorRequest?->package;
+
+        // A seat in a group class has no package — the class itself says how
+        // many sessions it runs. Without this the booking looks like a
+        // one-session package with nothing delivered, and accrues nothing
+        // however much the tutor is owed.
+        $class = $package ? null : $this->classEnrolment?->classSession;
+
         $policy = $package->payout_policy ?? 'per_session';
 
         if ($policy === 'upfront') {
             return $total;
         }
 
-        $totalSessions = max(1, (int) ($package->total_sessions ?? 1));
+        $totalSessions = max(1, (int) ($package->total_sessions ?? $class?->total_sessions ?? 1));
         $completed = $this->completedSessionsCount();
 
         if ($policy === 'on_completion') {
