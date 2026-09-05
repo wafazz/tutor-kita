@@ -62,4 +62,49 @@ class TutorRequest extends Model
 
         return static::where('request_group', $this->request_group)->get();
     }
+
+    /**
+     * Gross price for this request: subject rate x package duration x sessions.
+     *
+     * Single source of truth for request pricing — used when the payment is
+     * raised at approval and again when the booking is created on payment.
+     */
+    public function calculateAmount(): float
+    {
+        $this->loadMissing(['subject', 'package']);
+
+        $subject = $this->subject;
+        $package = $this->package;
+
+        if (! $subject || ! $package) {
+            return 0.0;
+        }
+
+        $rate = ($this->preferred_location ?? 'home') === 'online'
+            ? (float) $subject->hourly_rate_online
+            : (float) $subject->hourly_rate_home;
+
+        return $rate * (float) $package->duration_hours * (int) $package->total_sessions;
+    }
+
+    /**
+     * Money split for this request against its matched tutor's commission rate.
+     *
+     * @return array{amount: float, commission_amount: float, tutor_payout: float, commission_rate: float}
+     */
+    public function calculateSplit(?User $tutor = null): array
+    {
+        $tutor ??= $this->matchedTutor;
+
+        $amount = $this->calculateAmount();
+        $rate = (float) ($tutor?->tutorProfile?->commission_rate ?? 20);
+        $commission = round($amount * ($rate / 100), 2);
+
+        return [
+            'amount' => round($amount, 2),
+            'commission_amount' => $commission,
+            'tutor_payout' => round($amount - $commission, 2),
+            'commission_rate' => $rate,
+        ];
+    }
 }

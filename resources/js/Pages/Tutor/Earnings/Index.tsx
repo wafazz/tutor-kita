@@ -9,17 +9,14 @@ type Stats = {
     balance: string;
 };
 
-type RecentPayment = {
+type RecentEarning = {
     id: number;
     amount: string;
     tutor_payout: string;
     commission_amount: string;
-    paid_at: string | null;
-    booking: {
-        student: { name: string };
-        subject: { name: string };
-    };
-    session: { session_date: string; duration_minutes: number | null } | null;
+    student: { name: string } | null;
+    subject: { name: string } | null;
+    payment: { paid_at: string | null } | null;
 };
 
 type Payout = {
@@ -35,7 +32,7 @@ type Payout = {
 
 type Props = {
     stats: Stats;
-    recentPayments: RecentPayment[];
+    recentEarnings: RecentEarning[];
     payouts: Payout[];
 };
 
@@ -55,7 +52,7 @@ function StatCard({ label, value, color, sub }: { label: string; value: string; 
     );
 }
 
-export default function EarningsIndex({ stats, recentPayments, payouts }: Props) {
+export default function EarningsIndex({ stats, recentEarnings, payouts }: Props) {
     return (
         <AuthenticatedLayout
             header={<h2 className="text-xl font-semibold leading-tight text-gray-800">My Earnings</h2>}
@@ -96,16 +93,15 @@ export default function EarningsIndex({ stats, recentPayments, payouts }: Props)
                             <h3 className="font-semibold text-gray-900">Recent Earnings</h3>
                         </div>
                         <div className="divide-y">
-                            {recentPayments.length === 0 && (
+                            {recentEarnings.length === 0 && (
                                 <p className="p-6 text-center text-sm text-gray-400">No earnings yet.</p>
                             )}
-                            {recentPayments.map((p) => (
+                            {recentEarnings.map((p) => (
                                 <div key={p.id} className="flex items-center justify-between px-6 py-3">
                                     <div>
-                                        <p className="text-sm font-medium text-gray-900">{p.booking.student.name} — {p.booking.subject.name}</p>
+                                        <p className="text-sm font-medium text-gray-900">{p.student?.name ?? 'Student'} — {p.subject?.name ?? 'Subject'}</p>
                                         <p className="text-xs text-gray-500">
-                                            {p.session?.session_date ?? '-'}
-                                            {p.session?.duration_minutes ? ` · ${p.session.duration_minutes} min` : ''}
+                                            {p.payment?.paid_at ? new Date(p.payment.paid_at).toLocaleDateString() : '-'}
                                         </p>
                                     </div>
                                     <div className="text-right">

@@ -210,6 +210,11 @@ class PaymentController extends Controller
 
         if ($firstBooking) {
             $payment->update(['booking_id' => $firstBooking->id]);
+
+            // A grouped request spans several tutors under one payment; each
+            // tutor is paid from their own booking, so split the recorded
+            // totals across them now that the bookings exist.
+            $payment->allocateToBookings();
         }
     }
 }

@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Tutor;
 
 use App\Http\Controllers\Controller;
-use App\Models\Payment;
+use App\Models\Booking;
 use App\Models\TutorPayout;
 use Inertia\Inertia;
 
@@ -13,8 +13,18 @@ class EarningController extends Controller
     {
         $tutorId = auth()->id();
 
-        $totalEarned = Payment::where('status', 'success')
-            ->whereHas('booking', fn ($q) => $q->where('tutor_id', $tutorId))
+        // Earnings are attributed per booking, not per payment: a grouped
+        // request raises one payment covering several tutors, so reading the
+        // payment total would credit the whole group to a single tutor.
+        $earned = Booking::where('tutor_id', $tutorId)
+            ->whereHas('payment', fn ($q) => $q->where('status', 'success'));
+
+        $totalEarned = (clone $earned)->sum('tutor_payout');
+
+        $monthEarned = (clone $earned)
+            ->whereHas('payment', fn ($q) => $q->where('status', 'success')
+                ->whereMonth('paid_at', now()->month)
+                ->whereYear('paid_at', now()->year))
             ->sum('tutor_payout');
 
         $totalPaid = TutorPayout::where('tutor_id', $tutorId)
@@ -25,16 +35,9 @@ class EarningController extends Controller
             ->whereIn('status', ['pending', 'processing'])
             ->sum('amount');
 
-        $monthEarned = Payment::where('status', 'success')
-            ->whereHas('booking', fn ($q) => $q->where('tutor_id', $tutorId))
-            ->whereMonth('paid_at', now()->month)
-            ->whereYear('paid_at', now()->year)
-            ->sum('tutor_payout');
-
-        $recentPayments = Payment::where('status', 'success')
-            ->whereHas('booking', fn ($q) => $q->where('tutor_id', $tutorId))
-            ->with(['booking.student', 'booking.subject', 'session'])
-            ->orderBy('paid_at', 'desc')
+        $recentEarnings = (clone $earned)
+            ->with(['student:id,name', 'subject:id,name', 'payment:id,paid_at'])
+            ->orderByDesc('id')
             ->take(10)
             ->get();
 
@@ -51,7 +54,7 @@ class EarningController extends Controller
                 'monthEarned' => $monthEarned,
                 'balance' => $totalEarned - $totalPaid - $pendingPayout,
             ],
-            'recentPayments' => $recentPayments,
+            'recentEarnings' => $recentEarnings,
             'payouts' => $payouts,
         ]);
     }

@@ -9,6 +9,7 @@ class Booking extends Model
     protected $fillable = [
         'tutor_request_id', 'tutor_id', 'parent_id', 'student_id', 'subject_id',
         'schedule_day', 'schedule_time', 'duration_hours', 'hourly_rate', 'commission_rate',
+        'amount', 'commission_amount', 'tutor_payout', 'payment_id',
         'location_type', 'location_address', 'status', 'notes',
     ];
 
@@ -17,6 +18,9 @@ class Booking extends Model
         return [
             'hourly_rate' => 'decimal:2',
             'commission_rate' => 'decimal:2',
+            'amount' => 'decimal:2',
+            'commission_amount' => 'decimal:2',
+            'tutor_payout' => 'decimal:2',
             'duration_hours' => 'decimal:1',
         ];
     }
@@ -59,5 +63,14 @@ class Booking extends Model
     public function review()
     {
         return $this->hasOne(Review::class);
+    }
+
+    /**
+     * The payment that settled this booking. For a grouped request every
+     * booking in the group points at the same payment.
+     */
+    public function payment()
+    {
+        return $this->belongsTo(Payment::class);
     }
 }

@@ -13,19 +13,20 @@ type Payout = {
     tutor: { name: string; email: string };
 };
 
-type SessionPayment = {
+type PayoutBooking = {
     id: number;
     amount: string;
     tutor_payout: string;
     commission_amount: string;
-    paid_at: string | null;
-    booking: { student: { name: string }; subject: { name: string } };
-    session: { session_date: string; duration_minutes: number | null } | null;
+    student: { name: string } | null;
+    subject: { name: string } | null;
+    payment: { paid_at: string | null } | null;
+    sessions: { id: number; session_date: string; duration_minutes: number | null }[];
 };
 
 type Props = {
     payout: Payout;
-    sessions: SessionPayment[];
+    bookings: PayoutBooking[];
 };
 
 const statusColors: Record<string, string> = {
@@ -34,7 +35,7 @@ const statusColors: Record<string, string> = {
     paid: 'bg-green-100 text-green-800',
 };
 
-export default function PayoutShow({ payout, sessions }: Props) {
+export default function PayoutShow({ payout, bookings }: Props) {
     const { data, setData, post, processing } = useForm({ reference: '' });
 
     const handleMarkProcessing = () => {
@@ -151,7 +152,7 @@ export default function PayoutShow({ payout, sessions }: Props) {
                 {/* Session Breakdown */}
                 <div className="mt-6 overflow-hidden rounded-xl bg-white shadow-sm">
                     <div className="border-b px-6 py-4">
-                        <h3 className="font-semibold text-gray-900">Session Breakdown ({sessions.length})</h3>
+                        <h3 className="font-semibold text-gray-900">Booking Breakdown ({bookings.length})</h3>
                     </div>
                     <div className="overflow-x-auto">
                         <table className="min-w-full divide-y divide-gray-200">
@@ -167,12 +168,12 @@ export default function PayoutShow({ payout, sessions }: Props) {
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-200 bg-white">
-                                {sessions.map((s) => (
+                                {bookings.map((s) => (
                                     <tr key={s.id} className="hover:bg-gray-50">
-                                        <td className="whitespace-nowrap px-6 py-3 text-sm text-gray-900">{s.session?.session_date ?? '-'}</td>
-                                        <td className="whitespace-nowrap px-6 py-3 text-sm text-gray-900">{s.booking.student.name}</td>
-                                        <td className="whitespace-nowrap px-6 py-3 text-sm text-gray-500">{s.booking.subject.name}</td>
-                                        <td className="whitespace-nowrap px-6 py-3 text-sm text-gray-500">{s.session?.duration_minutes ? `${s.session.duration_minutes} min` : '-'}</td>
+                                        <td className="whitespace-nowrap px-6 py-3 text-sm text-gray-900">{s.sessions.length > 0 ? s.sessions[0].session_date : '-'}</td>
+                                        <td className="whitespace-nowrap px-6 py-3 text-sm text-gray-900">{s.student?.name ?? '-'}</td>
+                                        <td className="whitespace-nowrap px-6 py-3 text-sm text-gray-500">{s.subject?.name ?? '-'}</td>
+                                        <td className="whitespace-nowrap px-6 py-3 text-sm text-gray-500">{s.sessions.length > 0 ? `${s.sessions.length} session(s)` : '-'}</td>
                                         <td className="whitespace-nowrap px-6 py-3 text-sm text-gray-900">RM {Number(s.amount).toFixed(2)}</td>
                                         <td className="whitespace-nowrap px-6 py-3 text-sm text-gray-500">RM {Number(s.commission_amount).toFixed(2)}</td>
                                         <td className="whitespace-nowrap px-6 py-3 text-sm font-medium text-gray-900">RM {Number(s.tutor_payout).toFixed(2)}</td>
