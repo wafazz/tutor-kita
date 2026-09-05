@@ -8,11 +8,10 @@ use App\Models\Booking;
 use App\Models\Payment;
 use App\Models\Setting;
 use App\Models\TutorRequest;
-use App\Models\User;
+use App\Support\Payments\Billplz;
 use App\Support\SessionScheduler;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 
 class PaymentController extends Controller
@@ -51,18 +50,15 @@ class PaymentController extends Controller
         ]);
     }
 
-    public function pay(Payment $payment)
+    public function pay(Payment $payment, Billplz $billplz)
     {
         abort_unless($payment->parent_id === auth()->id(), 403);
         abort_unless($payment->status === 'pending', 403);
 
-        $pat = Setting::get('bayarcash_api_key');
-        $secretKey = Setting::get('bayarcash_secret_key');
-        $portalKey = Setting::get('bayarcash_portal_key');
-        $isSandbox = Setting::get('bayarcash_sandbox', '1');
-
-        // If API keys not configured, fallback to manual
-        if (! $pat || ! $portalKey || ! $secretKey) {
+        // Settling without collecting anything is a development convenience and
+        // has to be asked for explicitly. Keying it off missing gateway keys
+        // would mean a mistyped key in production gives everything away free.
+        if (Setting::get('payments_manual_mode', '0') === '1') {
             $payment->update([
                 'status' => 'success',
                 'payment_method' => 'manual',
@@ -70,90 +66,150 @@ class PaymentController extends Controller
             ]);
 
             return $this->completePayment($payment)
-                ->with('success', 'Payment completed (manual mode).');
+                ->with('success', 'Payment recorded (manual mode — no money was collected).');
         }
 
-        $baseUrl = $isSandbox === '1'
-            ? 'https://console.bayarcash-sandbox.com/api/v2'
-            : 'https://console.bayar.cash/api/v2';
+        if (! $billplz->configured()) {
+            return back()->with('error', 'No payment gateway is configured. Ask an administrator to set it up.');
+        }
 
-        $orderNo = 'TH-'.$payment->id.'-'.Str::random(6);
-        $payment->update(['transaction_id' => $orderNo]);
-
-        /** @var User $user */
         $user = auth()->user();
-        $amount = number_format((float) $payment->amount, 2, '.', '');
 
-        // Build payload for checksum (sorted by key)
-        $checksumData = [
-            'amount' => $amount,
-            'order_number' => $orderNo,
-            'payer_email' => $user->email,
-            'payer_name' => $user->name,
-            'payment_channel' => 1,
-        ];
-        ksort($checksumData);
-        $checksumString = implode('|', $checksumData);
-        $checksum = hash_hmac('sha256', $checksumString, $secretKey);
-
-        $response = Http::withToken($pat)->post("{$baseUrl}/payment-intents", [
-            'payment_channel' => 1,
-            'portal_key' => $portalKey,
-            'order_number' => $orderNo,
-            'amount' => $amount,
-            'payer_name' => $user->name,
-            'payer_email' => $user->email,
-            'payer_telephone_number' => $user->phone ?? '',
-            'return_url' => route('parent.payments.callback'),
-            'checksum' => $checksum,
+        $bill = $billplz->createBill([
+            'email' => $user->email,
+            'name' => $user->name,
+            'amount' => (float) $payment->amount,
+            'description' => 'TutorHUB payment #'.$payment->id,
+            'reference' => 'TH-'.$payment->id,
+            'callbackUrl' => route('payments.billplz.webhook'),
+            'redirectUrl' => route('parent.payments.return'),
         ]);
 
-        if ($response->successful() && isset($response->json()['url'])) {
-            return Inertia::location($response->json()['url']);
+        if (! $bill) {
+            return back()->with('error', 'The payment gateway could not be reached. Please try again shortly.');
         }
 
-        // API call failed — log error and show message
-        \Log::error('Bayarcash API error', [
-            'status' => $response->status(),
-            'body' => $response->json() ?? $response->body(),
-        ]);
+        $payment->update(['gateway' => 'billplz', 'transaction_id' => $bill['id']]);
 
-        return redirect()->route('parent.requests.show', $payment->tutor_request_id)
-            ->with('error', 'Payment gateway error. Please try again or contact admin.');
+        return Inertia::location($bill['url']);
     }
 
-    public function callback(Request $request)
+    /**
+     * Server-to-server notification from Billplz. This is what settles a payment.
+     *
+     * Unauthenticated by necessity — Billplz calls it, not the payer — so the
+     * signature is the only thing establishing that the message is genuine.
+     */
+    public function webhook(Request $request, Billplz $billplz)
     {
-        $orderNo = $request->input('order_number') ?? $request->input('record_number');
-        $status = $request->input('status_id') ?? $request->input('status');
-        $transactionId = $request->input('transaction_id') ?? $request->input('exchange_reference_number');
+        $payload = $request->all();
 
-        $payment = Payment::where('transaction_id', $orderNo)->first();
+        if (! $billplz->webhookSignatureIsValid($payload)) {
+            Log::warning('Rejected a Billplz webhook with an invalid signature', [
+                'bill' => $payload['id'] ?? null,
+            ]);
 
-        if (! $payment) {
-            return redirect()->route('parent.payments.index')->with('error', 'Payment not found.');
+            return response('invalid signature', 403);
         }
 
-        // Bayarcash status: 1 = new, 2 = pending, 3 = successful, 4 = failed, 5 = cancelled
-        if ($status == 3 || $status === 'success') {
+        $payment = Payment::where('transaction_id', $payload['id'] ?? '')->first();
+
+        if (! $payment) {
+            // Acknowledged so Billplz stops retrying something we cannot match.
+            return response('unknown bill', 200);
+        }
+
+        // Billplz sends "true"/"false" as strings.
+        $paid = filter_var($payload['paid'] ?? false, FILTER_VALIDATE_BOOLEAN);
+
+        if (! $paid) {
+            if ($payment->status === 'pending') {
+                $payment->update(['status' => 'failed']);
+            }
+
+            return response('ok', 200);
+        }
+
+        // The amount is confirmed against what was owed: a bill settled for
+        // less than the invoice must not pass as payment in full.
+        $paidAmount = ((int) ($payload['paid_amount'] ?? 0)) / 100;
+
+        if (round($paidAmount, 2) + 0.001 < round((float) $payment->amount, 2)) {
+            Log::warning('Billplz reported an underpayment', [
+                'payment' => $payment->id, 'owed' => $payment->amount, 'paid' => $paidAmount,
+            ]);
+
+            return response('amount mismatch', 200);
+        }
+
+        // Webhooks are retried, so settling twice must be harmless.
+        if ($payment->status !== 'success') {
             $payment->update([
                 'status' => 'success',
                 'payment_method' => 'fpx',
-                'gateway' => 'bayarcash',
-                'transaction_id' => $transactionId ?? $orderNo,
+                'gateway' => 'billplz',
                 'paid_at' => now(),
             ]);
 
-            return $this->completePayment($payment);
+            $this->completePayment($payment);
         }
 
-        $payment->update(['status' => 'failed']);
+        return response('ok', 200);
+    }
 
-        return $payment->tutor_request_id
-            ? redirect()->route('parent.requests.show', $payment->tutor_request_id)
-                ->with('error', 'Payment failed. Please try again.')
-            : redirect()->route('parent.payments.index')
-                ->with('error', 'Payment failed. Please try again.');
+    /**
+     * Where the payer lands after Billplz.
+     *
+     * Shows an outcome and nothing more. The redirect is a URL the payer
+     * controls, so it never settles anything — if the webhook has not arrived
+     * yet, Billplz is asked directly rather than the browser being believed.
+     */
+    public function paymentReturn(Request $request, Billplz $billplz)
+    {
+        $params = $request->input('billplz', []);
+        $billId = $params['id'] ?? null;
+
+        $payment = $billId ? Payment::where('transaction_id', $billId)->first() : null;
+
+        if (! $payment || $payment->parent_id !== auth()->id()) {
+            return redirect()->route('parent.payments.index');
+        }
+
+        if ($payment->status === 'success') {
+            return $this->completedRedirect($payment);
+        }
+
+        // The webhook may simply not have landed yet. A signed redirect is a
+        // reason to ask Billplz, never a reason to believe the browser.
+        if ($billplz->redirectSignatureIsValid($params)) {
+            $bill = $billplz->fetchBill($billId);
+
+            if ($bill && filter_var($bill['paid'] ?? false, FILTER_VALIDATE_BOOLEAN)) {
+                $payment->update([
+                    'status' => 'success',
+                    'payment_method' => 'fpx',
+                    'gateway' => 'billplz',
+                    'paid_at' => now(),
+                ]);
+
+                return $this->completePayment($payment);
+            }
+        }
+
+        return redirect()->route('parent.payments.show', $payment->id)
+            ->with('info', 'We are confirming your payment with the bank. This page will show it as paid once confirmed.');
+    }
+
+    /** Where to send someone whose payment is already settled. */
+    private function completedRedirect(Payment $payment)
+    {
+        $enrolment = $payment->enrolment;
+
+        return $enrolment
+            ? redirect()->route('parent.classes.show', $enrolment->class_session_id)
+                ->with('success', 'Payment confirmed.')
+            : redirect()->route('parent.payments.show', $payment->id)
+                ->with('success', 'Payment confirmed.');
     }
 
     /**

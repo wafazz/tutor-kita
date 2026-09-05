@@ -47,6 +47,11 @@ Route::get('/', function () {
 
 Route::get('/tutors', TutorBrowseController::class)->name('tutors.browse');
 
+// Billplz calls this server to server, so it cannot sit behind auth. The
+// X-Signature is what establishes that the message is genuine.
+Route::post('/payments/billplz/webhook', [ParentPaymentController::class, 'webhook'])
+    ->name('payments.billplz.webhook');
+
 // Address forms use this to fill city and state from a postcode.
 Route::middleware('auth')->get('/postcode-lookup', PostcodeLookupController::class)->name('postcode.lookup');
 
@@ -209,7 +214,7 @@ Route::middleware(['auth', 'verified', 'role:parent'])->prefix('parent')->name('
     Route::post('/sessions/{session}/confirm', [ParentSessionController::class, 'confirm'])->name('sessions.confirm');
 
     Route::get('/payments', [ParentPaymentController::class, 'index'])->name('payments.index');
-    Route::get('/payments/callback', [ParentPaymentController::class, 'callback'])->name('payments.callback');
+    Route::get('/payments/return', [ParentPaymentController::class, 'paymentReturn'])->name('payments.return');
     Route::get('/payments/{payment}', [ParentPaymentController::class, 'show'])->name('payments.show');
     Route::post('/payments/{payment}/pay', [ParentPaymentController::class, 'pay'])->name('payments.pay');
 

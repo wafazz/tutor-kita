@@ -2,7 +2,7 @@
 
 A tuition marketplace connecting parents with tutors across Malaysia. It covers the
 whole lifecycle — requests and matching, five ways a lesson can be delivered, session
-check-in with GPS and QR verification, collection through BayarCash FPX, and tutor
+check-in with GPS and QR verification, collection through Billplz, and tutor
 payouts.
 
 ## Tech Stack
@@ -14,7 +14,7 @@ payouts.
 | Bridge | Inertia.js 2.0 (server-driven SPA) |
 | Database | MySQL |
 | Auth | Laravel Breeze + role middleware |
-| Collection | BayarCash FPX |
+| Collection | Billplz |
 | Build | Vite 7 |
 | Tests | Pest / PHPUnit — 208 tests, 790 assertions |
 

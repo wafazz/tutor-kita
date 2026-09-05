@@ -8,6 +8,7 @@ use App\Models\Booking;
 use App\Models\ClassEnrolment;
 use App\Models\ClassSession;
 use App\Models\Payment;
+use App\Models\Setting;
 use App\Models\Student;
 use App\Models\Subject;
 use App\Models\TutorProfile;
@@ -88,6 +89,9 @@ class ClassEnrolmentFlowTest extends TestCase
 
         $bookingsBefore = Booking::count();
 
+        // Settling without collecting is now a deliberate switch rather
+        // than something that happens when keys are missing.
+        Setting::set('payments_manual_mode', '1');
         // No gateway keys configured, so this takes the manual path.
         $this->actingAs($parent)->post("/parent/payments/{$enrolment->payment_id}/pay")
             ->assertRedirect("/parent/classes/{$class->id}");

@@ -5,10 +5,11 @@ import { FormEvent } from 'react';
 type Settings = {
     commission_rate: string;
     site_name: string;
-    bayarcash_api_key: string;
-    bayarcash_secret_key: string;
-    bayarcash_portal_key: string;
-    bayarcash_sandbox: string;
+    billplz_api_key: string;
+    billplz_collection_id: string;
+    billplz_x_signature_key: string;
+    billplz_sandbox: string;
+    payments_manual_mode: string;
     resend_api_key: string;
     resend_from_email: string;
     resend_from_name: string;
@@ -93,52 +94,61 @@ export default function SettingsIndex({ settings }: { settings: Settings }) {
                     </div>
                 </SectionCard>
 
-                {/* Bayarcash */}
-                <SectionCard title="Bayarcash FPX" description="Payment gateway credentials for online FPX payments.">
+                {/* Billplz */}
+                <SectionCard title="Billplz" description="Payment gateway credentials for collecting online payments.">
                     <div className="space-y-4">
                         <InputField
                             label="API Key"
                             type="password"
-                            value={data.bayarcash_api_key}
-                            onChange={e => setData('bayarcash_api_key', e.target.value)}
-                            placeholder="bc_xxxxxxxxxxxxxxxx"
+                            value={data.billplz_api_key}
+                            onChange={e => setData('billplz_api_key', e.target.value)}
+                            placeholder="From Billplz → Account Settings"
                             autoComplete="off"
                         />
                         <InputField
-                            label="Secret Key"
+                            label="Collection ID"
+                            value={data.billplz_collection_id}
+                            onChange={e => setData('billplz_collection_id', e.target.value)}
+                            placeholder="e.g. inbmmepb"
+                            hint="The collection bills are created in"
+                        />
+                        <InputField
+                            label="X-Signature Key"
                             type="password"
-                            value={data.bayarcash_secret_key}
-                            onChange={e => setData('bayarcash_secret_key', e.target.value)}
-                            placeholder="bc_secret_xxxxxxxx"
+                            value={data.billplz_x_signature_key}
+                            onChange={e => setData('billplz_x_signature_key', e.target.value)}
+                            placeholder="From Billplz → Settings → X-Signature"
+                            hint="Without this, payment notifications cannot be verified and none are accepted"
                             autoComplete="off"
-                        />
-                        <InputField
-                            label="Portal Key"
-                            value={data.bayarcash_portal_key}
-                            onChange={e => setData('bayarcash_portal_key', e.target.value)}
-                            placeholder="Portal/Channel token"
-                            hint="From Bayarcash dashboard"
                         />
                         <div>
                             <label className="block text-sm font-medium text-gray-700">Environment</label>
                             <select
-                                value={data.bayarcash_sandbox}
-                                onChange={e => setData('bayarcash_sandbox', e.target.value)}
+                                value={data.billplz_sandbox}
+                                onChange={e => setData('billplz_sandbox', e.target.value)}
                                 className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                             >
                                 <option value="1">Sandbox (Testing)</option>
                                 <option value="0">Production (Live)</option>
                             </select>
-                            <p className="mt-1 text-xs text-gray-400">Use sandbox for testing before going live</p>
+                            <p className="mt-1 text-xs text-gray-400">Sandbox and live use different keys and a different collection</p>
                         </div>
                     </div>
+
                     <div className="mt-4 rounded-lg bg-amber-50 px-4 py-3">
-                        <div className="flex items-start gap-2">
-                            <svg className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
-                            </svg>
-                            <p className="text-xs text-amber-700">Ensure you switch to Production only when ready to accept real payments.</p>
-                        </div>
+                        <label className="block text-sm font-medium text-amber-900">Manual payment mode</label>
+                        <select
+                            value={data.payments_manual_mode}
+                            onChange={e => setData('payments_manual_mode', e.target.value)}
+                            className="mt-1 block w-full rounded-lg border-amber-300 shadow-sm focus:border-amber-500 focus:ring-amber-500 sm:text-sm"
+                        >
+                            <option value="0">Off — payments must be collected</option>
+                            <option value="1">On — mark paid without collecting</option>
+                        </select>
+                        <p className="mt-2 text-xs text-amber-800">
+                            For testing only. While this is on, an invoice can be settled without any money changing hands.
+                            It is a deliberate switch so that a missing or mistyped gateway key can never do this by accident.
+                        </p>
                     </div>
                 </SectionCard>
 

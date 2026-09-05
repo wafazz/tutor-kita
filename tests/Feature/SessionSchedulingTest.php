@@ -6,6 +6,7 @@ use App\Enums\DeliveryMode;
 use App\Models\Booking;
 use App\Models\Package;
 use App\Models\Payment;
+use App\Models\Setting;
 use App\Models\Student;
 use App\Models\Subject;
 use App\Models\TutorProfile;
@@ -160,6 +161,8 @@ class SessionSchedulingTest extends TestCase
             'payment_method' => 'fpx', 'status' => 'pending',
         ]);
 
+        // Settling without collecting is now a deliberate switch.
+        Setting::set('payments_manual_mode', '1');
         // No gateway keys, so this takes the manual path and creates the booking.
         $this->actingAs($this->parent)->post("/parent/payments/{$payment->id}/pay");
 
