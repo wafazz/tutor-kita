@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Payment;
+use App\Support\Payments\PaymentCompletion;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -50,7 +51,7 @@ class PaymentController extends Controller
         ]);
     }
 
-    public function markPaid(Payment $payment)
+    public function markPaid(Payment $payment, PaymentCompletion $completion)
     {
         abort_unless($payment->status === 'pending', 403);
 
@@ -60,7 +61,12 @@ class PaymentController extends Controller
             'paid_at' => now(),
         ]);
 
-        return back()->with('success', 'Payment marked as paid.');
+        // Marking a payment paid is not the same as completing what it pays
+        // for. Without this the booking and its sessions are never created,
+        // and the tutor's share becomes money that no payout can reach.
+        $completion->complete($payment);
+
+        return back()->with('success', 'Payment marked as paid, and the booking created.');
     }
 
     public function markFailed(Payment $payment)
