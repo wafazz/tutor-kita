@@ -18,6 +18,30 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        // Behind a tunnel or load balancer, TLS is terminated upstream and the
+        // request reaches PHP as plain HTTP. Without trusting the forwarded
+        // headers, Laravel builds every URL as http:// while the page is
+        // served over https:// — the browser blocks the assets as mixed
+        // content and the page renders blank.
+        //
+        // This also matters for the payment gateway: the callback URL sent to
+        // Billplz has to be the https one the outside world can reach.
+        $middleware->trustProxies(at: '*', headers: Request::HEADER_X_FORWARDED_FOR
+            | Request::HEADER_X_FORWARDED_HOST
+            | Request::HEADER_X_FORWARDED_PORT
+            | Request::HEADER_X_FORWARDED_PROTO
+            | Request::HEADER_X_FORWARDED_AWS_ELB);
+
+        // Billplz posts here from its own servers, with no session and no
+        // token. The X-Signature is what authenticates it instead, so CSRF
+        // would only ever reject a genuine notification.
+        //
+        // Not covered by the test suite: Laravel skips CSRF entirely when
+        // running tests, so this can only be verified against a real request.
+        $middleware->validateCsrfTokens(except: [
+            'payments/billplz/webhook',
+        ]);
+
         $middleware->web(append: [
             HandleInertiaRequests::class,
             AddLinkHeadersForPreloadedAssets::class,
