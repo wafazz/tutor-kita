@@ -20,6 +20,10 @@ type TutorRequestFull = {
 type TutorItem = {
     id: number;
     name: string;
+    eligible: boolean;
+    blockers: string[];
+    warnings: string[];
+    distance_km: number | null;
     tutor_profile: {
         hourly_rate: string | null;
         location_area: string | null;
@@ -223,7 +227,19 @@ export default function RequestsShow({ tutorRequest, allTutors }: Props) {
                                                         {isCurrentMatch && (
                                                             <span className="inline-flex rounded-full bg-green-100 px-1.5 py-0.5 text-[10px] font-semibold text-green-700">Current</span>
                                                         )}
+                                                        {!tutor.eligible && (
+                                                            <span className="inline-flex rounded-full bg-red-50 px-1.5 py-0.5 text-[10px] font-semibold text-red-700">Cannot take</span>
+                                                        )}
                                                     </div>
+                                                    {tutor.blockers.length > 0 && (
+                                                        <p className="mt-0.5 text-[11px] text-red-600">{tutor.blockers.join('; ')}</p>
+                                                    )}
+                                                    {tutor.eligible && tutor.warnings.length > 0 && (
+                                                        <p className="mt-0.5 text-[11px] text-amber-600">{tutor.warnings.join('; ')}</p>
+                                                    )}
+                                                    {tutor.distance_km !== null && (
+                                                        <p className="mt-0.5 text-[11px] text-gray-400">about {Math.round(tutor.distance_km)} km away</p>
+                                                    )}
                                                 </td>
                                                 <td className="px-4 py-3 text-sm text-gray-500">
                                                     <div className="flex max-w-[200px] flex-wrap gap-1">
@@ -254,6 +270,14 @@ export default function RequestsShow({ tutorRequest, allTutors }: Props) {
                                                         <button
                                                             disabled
                                                             className="rounded-md bg-gray-300 px-3 py-1 text-sm font-medium text-gray-500 cursor-not-allowed"
+                                                        >
+                                                            Assign
+                                                        </button>
+                                                    ) : !tutor.eligible ? (
+                                                        <button
+                                                            disabled
+                                                            title={tutor.blockers.join('; ')}
+                                                            className="cursor-not-allowed rounded-md bg-gray-200 px-3 py-1 text-sm font-medium text-gray-400"
                                                         >
                                                             Assign
                                                         </button>

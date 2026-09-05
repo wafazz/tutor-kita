@@ -9,6 +9,8 @@ use App\Models\Subject;
 use App\Models\TutorRequest;
 use App\Models\User;
 use App\Support\ScheduleConflictDetector;
+use App\Support\TutorEligibility;
+use App\Support\TutorMatcher;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -32,11 +34,21 @@ class RequestController extends Controller
     {
         $tutorRequest->load(['parent', 'student', 'subject', 'package', 'matchedTutor', 'payment']);
 
-        $allTutors = User::where('role', 'tutor')
-            ->whereHas('tutorProfile', fn ($q) => $q->where('verification_status', 'verified'))
-            ->with('tutorProfile')
-            ->orderBy('name')
-            ->get();
+        // Every tutor, assessed against this request: eligible ones first,
+        // and the rest carrying the reason they cannot take it, so a missing
+        // tutor is explained rather than simply absent.
+        $allTutors = app(TutorMatcher::class)->assessFor($tutorRequest)
+            ->map(fn (array $row) => [
+                'id' => $row['tutor']->id,
+                'name' => $row['tutor']->name,
+                'email' => $row['tutor']->email,
+                'gender' => $row['tutor']->gender,
+                'tutor_profile' => $row['tutor']->tutorProfile,
+                'eligible' => $row['eligible'],
+                'blockers' => $row['blockers'],
+                'warnings' => $row['warnings'],
+                'distance_km' => $row['distance_km'],
+            ]);
 
         // Load group siblings if part of a group
         $groupRequests = [];
@@ -63,6 +75,15 @@ class RequestController extends Controller
 
         // A tutor cannot be in two places at once, and cannot cross town
         // between back-to-back lessons either.
+        // Enforced here as well as in the list: filtering a screen is not the
+        // same as refusing the action, and this is the action.
+        $assessment = app(TutorEligibility::class)->assess($tutor, $tutorRequest);
+
+        if (! $assessment['eligible']) {
+            return redirect()->back()->with('error',
+                "{$tutor->name} cannot take this request: ".implode('; ', $assessment['blockers']).'.');
+        }
+
         if ($clash = $this->firstScheduleClash($tutorRequest, $tutor)) {
             return redirect()->back()->with('error', $clash);
         }

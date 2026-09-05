@@ -53,7 +53,7 @@ class StudentClashTest extends TestCase
     {
         $tutor = User::factory()->tutor()->create(['name' => 'Cikgu '.uniqid()]);
         TutorProfile::create([
-            'user_id' => $tutor->id, 'subjects' => [], 'hourly_rate' => 50,
+            'user_id' => $tutor->id, 'subjects' => ['Maths'], 'hourly_rate' => 50,
             'location_area' => 'PJ', 'location_state' => 'Sel',
             'verification_status' => 'verified', 'commission_rate' => 20,
             'latitude' => $at[0], 'longitude' => $at[1],

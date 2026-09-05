@@ -105,4 +105,110 @@ class TutorMatcher
             ->sortBy('distance_km')
             ->values();
     }
+
+    /**
+     * Assess every verified tutor against a request.
+     *
+     * Eligibility first — a tutor who fails a mandatory requirement is excluded
+     * rather than ranked lower — then schedule and travel, then ranking among
+     * whoever is left. Ineligible tutors are still returned, carrying the
+     * reason, so an admin sees why someone is missing instead of wondering.
+     *
+     * @return Collection<int, array{
+     *     tutor: User, eligible: bool, blockers: array, warnings: array,
+     *     distance_km: float|null, score: float
+     * }>
+     */
+    public function assessFor(TutorRequest $request): Collection
+    {
+        $eligibility = app(TutorEligibility::class);
+        $detector = app(ScheduleConflictDetector::class);
+        $mode = $request->deliveryMode();
+
+        $request->loadMissing(['subject', 'student']);
+
+        [$latitude, $longitude] = [$request->student?->latitude, $request->student?->longitude];
+
+        return User::where('role', 'tutor')
+            ->with(['tutorProfile'])
+            ->orderBy('name')
+            ->get()
+            ->map(function (User $tutor) use ($request, $eligibility, $detector, $mode, $latitude, $longitude) {
+                $assessment = $eligibility->assess($tutor, $request);
+                $profile = $tutor->tutorProfile;
+
+                $distance = $mode->needsGeo()
+                    ? $profile?->distanceTo($latitude, $longitude)
+                    : null;
+
+                // A tutor who cannot make the slot is not a candidate, however
+                // well they match on paper.
+                $clash = $detector->check(
+                    tutorId: $tutor->id,
+                    day: $request->schedule_day,
+                    time: $request->schedule_time,
+                    durationHours: (float) ($request->duration_hours ?? $request->package?->duration_hours ?? 1),
+                    mode: $mode,
+                    latitude: $latitude,
+                    longitude: $longitude,
+                )->first();
+
+                if ($clash) {
+                    $assessment['blockers'][] = strtolower($clash->kind === 'travel'
+                        ? 'cannot travel between this and another lesson that day'
+                        : 'already teaching at that time');
+                    $assessment['eligible'] = false;
+                }
+
+                // Travel is only a bar when the tutor is the one travelling.
+                if ($mode === DeliveryMode::HomeStudent && $distance !== null) {
+                    $limit = $profile?->travel_radius_km ?? self::DEFAULT_RADIUS_KM;
+
+                    if ($distance > $limit) {
+                        $assessment['blockers'][] = sprintf('%.0f km away, beyond the %d km they travel', $distance, $limit);
+                        $assessment['eligible'] = false;
+                    }
+                }
+
+                return [
+                    'tutor' => $tutor,
+                    'eligible' => $assessment['eligible'],
+                    'blockers' => $assessment['blockers'],
+                    'warnings' => $assessment['warnings'],
+                    'distance_km' => $distance,
+                    'score' => $this->score($tutor, $distance, $assessment['warnings']),
+                ];
+            })
+            // Eligible first, then best score, then nearest.
+            ->sortBy([
+                fn ($a, $b) => ($b['eligible'] <=> $a['eligible']),
+                fn ($a, $b) => ($b['score'] <=> $a['score']),
+            ])
+            ->values();
+    }
+
+    /**
+     * How good a match an eligible tutor is.
+     *
+     * Only ever separates tutors who are all allowed to take the work —
+     * ranking never rescues someone who failed a mandatory requirement.
+     */
+    private function score(User $tutor, ?float $distance, array $warnings): float
+    {
+        $profile = $tutor->tutorProfile;
+
+        $rating = (float) ($profile?->rating_avg ?? 0);
+        $experience = min(10, (int) ($profile?->experience_years ?? 0));
+
+        $score = ($rating * 10) + ($experience * 2);
+
+        // Nearer is better, but never worth more than being well rated.
+        if ($distance !== null) {
+            $score += max(0, 20 - $distance);
+        }
+
+        // A soft concern costs a little, so an otherwise equal tutor without
+        // one comes first.
+        return round($score - (count($warnings) * 5), 2);
+    }
 }

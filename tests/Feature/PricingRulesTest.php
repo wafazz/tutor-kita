@@ -45,11 +45,11 @@ class PricingRulesTest extends TestCase
         ]);
     }
 
-    private function tutor(?float $commission = null): User
+    private function tutor(?float $commission = null, ?string $teaches = null): User
     {
         $tutor = User::factory()->tutor()->create();
         $attrs = [
-            'user_id' => $tutor->id, 'subjects' => [], 'hourly_rate' => 50,
+            'user_id' => $tutor->id, 'subjects' => $teaches ? [$teaches] : [], 'hourly_rate' => 50,
             'location_area' => 'PJ', 'location_state' => 'Sel', 'verification_status' => 'verified',
         ];
         if ($commission !== null) {
@@ -134,8 +134,8 @@ class PricingRulesTest extends TestCase
 
     public function test_re_approving_does_not_rewrite_a_payment_the_parent_already_settled(): void
     {
-        $tutor = $this->tutor(commission: 20);
         $subject = $this->subject(home: 60, online: 60);
+        $tutor = $this->tutor(commission: 20, teaches: $subject->name);
         $package = $this->package(sessions: 1, hours: 2);
         $request = $this->request($subject, $package, 'home', $tutor);
 
@@ -157,8 +157,8 @@ class PricingRulesTest extends TestCase
 
     public function test_a_still_pending_payment_is_repriced_on_re_approval(): void
     {
-        $tutor = $this->tutor(commission: 20);
         $subject = $this->subject(home: 60, online: 60);
+        $tutor = $this->tutor(commission: 20, teaches: $subject->name);
         $request = $this->request($subject, $this->package(sessions: 1, hours: 2), 'home', $tutor);
 
         $admin = User::factory()->admin()->create();
