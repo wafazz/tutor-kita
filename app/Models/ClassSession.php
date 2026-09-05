@@ -11,7 +11,7 @@ class ClassSession extends Model
     protected $fillable = [
         'tutor_id', 'subject_id', 'centre_id', 'delivery_mode', 'title',
         'schedule_day', 'schedule_time', 'duration_hours', 'total_sessions', 'starts_on',
-        'capacity', 'price_per_student',
+        'capacity', 'price_per_student', 'commission_rate',
         'payout_model', 'payout_base', 'payout_per_head', 'payout_head_threshold',
         'status',
     ];
@@ -23,6 +23,7 @@ class ClassSession extends Model
             'payout_model' => GroupPayoutModel::class,
             'duration_hours' => 'decimal:1',
             'price_per_student' => 'decimal:2',
+            'commission_rate' => 'decimal:2',
             'payout_base' => 'decimal:2',
             'payout_per_head' => 'decimal:2',
             'starts_on' => 'date',
@@ -130,8 +131,20 @@ class ClassSession extends Model
         return round($this->revenue() - $this->tutorPayoutTotal($headcount), 2);
     }
 
+    /**
+     * The commission this class was sold under.
+     *
+     * Fixed when the class is created rather than read live, so renegotiating
+     * a tutor's rate cannot reprice classes that have already been sold. Older
+     * classes with nothing recorded fall back to the tutor's rate, which is the
+     * only one that was ever applied to them.
+     */
     public function commissionRate(): float
     {
+        if ($this->commission_rate !== null) {
+            return (float) $this->commission_rate;
+        }
+
         return (float) ($this->tutor?->tutorProfile?->commission_rate ?? Setting::defaultCommissionRate());
     }
 

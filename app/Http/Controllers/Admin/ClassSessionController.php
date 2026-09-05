@@ -7,6 +7,7 @@ use App\Enums\GroupPayoutModel;
 use App\Http\Controllers\Controller;
 use App\Models\Centre;
 use App\Models\ClassSession;
+use App\Models\Setting;
 use App\Models\Subject;
 use App\Models\User;
 use App\Support\ScheduleConflictDetector;
@@ -42,6 +43,11 @@ class ClassSessionController extends Controller
         if ($clash = $this->firstScheduleClash($validated)) {
             return redirect()->back()->with('error', $clash);
         }
+
+        // The terms are fixed now, so a later change to the tutor's rate
+        // cannot reprice a class that has already been sold.
+        $validated['commission_rate'] = User::find($validated['tutor_id'])
+            ?->tutorProfile?->commission_rate ?? Setting::defaultCommissionRate();
 
         ClassSession::create($validated);
 
