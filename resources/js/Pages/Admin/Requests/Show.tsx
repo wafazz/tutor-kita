@@ -7,11 +7,11 @@ type TutorRequestFull = {
     parent: { name: string; email: string; phone: string | null };
     student: { name: string; age: number | null; education_level: string | null };
     subject: { name: string };
-    package: { name: string; total_sessions: number; duration_hours: number; price: number } | null;
+    package: { name: string; total_sessions: number; duration_hours: string; price: string } | null;
     preferred_area: string;
     preferred_schedule: string | null;
-    budget_min: number | null;
-    budget_max: number | null;
+    budget_min: string | null;
+    budget_max: string | null;
     notes: string | null;
     status: string;
     matched_tutor: { id: number; name: string } | null;
@@ -21,10 +21,10 @@ type TutorItem = {
     id: number;
     name: string;
     tutor_profile: {
-        hourly_rate: number | null;
+        hourly_rate: string | null;
         location_area: string | null;
         location_state: string | null;
-        rating_avg: number | null;
+        rating_avg: string | null;
         experience_years: number | null;
         subjects: string[] | null;
     };

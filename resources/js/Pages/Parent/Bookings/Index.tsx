@@ -8,8 +8,8 @@ type BookingItem = {
     subject: { name: string };
     schedule_day: string;
     schedule_time: string;
-    duration_hours: number;
-    hourly_rate: number;
+    duration_hours: string;
+    hourly_rate: string;
     status: string;
 };
 

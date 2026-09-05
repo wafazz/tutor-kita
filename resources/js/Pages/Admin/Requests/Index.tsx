@@ -7,8 +7,8 @@ type TutorRequestItem = {
     student: { name: string };
     subject: { name: string };
     preferred_area: string;
-    budget_min: number | null;
-    budget_max: number | null;
+    budget_min: string | null;
+    budget_max: string | null;
     status: string;
     matched_tutor: { name: string } | null;
 };

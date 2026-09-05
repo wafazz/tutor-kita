@@ -13,8 +13,8 @@ type PackageItem = {
     package_type: 'all' | 'specific';
     description: string | null;
     total_sessions: number;
-    duration_hours: number;
-    price: number;
+    duration_hours: string;
+    price: string;
     payout_policy: 'upfront' | 'per_session' | 'on_completion';
     is_active: boolean;
     sort_order: number;

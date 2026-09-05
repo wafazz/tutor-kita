@@ -25,12 +25,12 @@ type BookingFull = {
     subject: { name: string };
     schedule_day: string;
     schedule_time: string;
-    duration_hours: number;
-    hourly_rate: number;
+    duration_hours: string;
+    hourly_rate: string;
     status: string;
     location_type: string;
     location_address: string | null;
-    commission_rate: number;
+    commission_rate: string;
     notes: string | null;
     sessions: SessionItem[];
     review: ReviewData | null;

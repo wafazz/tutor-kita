@@ -25,8 +25,8 @@ type PackageItem = {
     package_type: 'all' | 'specific';
     description: string | null;
     total_sessions: number;
-    duration_hours: number;
-    price: number;
+    duration_hours: string;
+    price: string;
     subjects: { id: number; name: string; hourly_rate_home: string; hourly_rate_online: string }[];
 };
 

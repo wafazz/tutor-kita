@@ -5,11 +5,11 @@ type RequestFull = {
     id: number;
     student: { name: string };
     subject: { name: string };
-    package: { name: string; total_sessions: number; duration_hours: number; price: number } | null;
+    package: { name: string; total_sessions: number; duration_hours: string; price: string } | null;
     preferred_area: string;
     preferred_schedule: string | null;
-    budget_min: number | null;
-    budget_max: number | null;
+    budget_min: string | null;
+    budget_max: string | null;
     status: string;
     tutor_accepted: boolean;
     matched_tutor: { name: string } | null;
@@ -17,7 +17,7 @@ type RequestFull = {
     created_at: string;
     payment: {
         id: number;
-        amount: number;
+        amount: string;
         status: string;
         paid_at: string | null;
     } | null;

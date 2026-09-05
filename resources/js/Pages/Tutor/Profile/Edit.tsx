@@ -8,7 +8,7 @@ interface TutorProfile {
     education_level: string | null;
     experience_years: number;
     bio: string | null;
-    hourly_rate: number;
+    hourly_rate: string;
     location_area: string;
     location_state: string;
     availability: string[] | null;

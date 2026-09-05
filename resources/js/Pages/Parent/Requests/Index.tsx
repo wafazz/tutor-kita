@@ -5,12 +5,12 @@ type RequestItem = {
     id: number;
     student: { name: string };
     subject: { name: string };
-    package: { name: string; price: number } | null;
+    package: { name: string; price: string } | null;
     preferred_area: string;
     status: string;
     tutor_accepted: boolean;
     matched_tutor: { name: string } | null;
-    payment: { id: number; amount: number; status: string } | null;
+    payment: { id: number; amount: string; status: string } | null;
 };
 
 const statusBadge = (status: string) => {

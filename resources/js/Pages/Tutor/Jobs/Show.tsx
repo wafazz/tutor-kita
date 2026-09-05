@@ -12,11 +12,11 @@ interface JobFull {
         education_level: string | null;
     };
     subject: { name: string };
-    package: { name: string; total_sessions: number; duration_hours: number; price: number } | null;
+    package: { name: string; total_sessions: number; duration_hours: string; price: string } | null;
     preferred_area: string;
     preferred_schedule: string | null;
-    budget_min: number | null;
-    budget_max: number | null;
+    budget_min: string | null;
+    budget_max: string | null;
     notes: string | null;
 }
 
@@ -46,10 +46,13 @@ export default function Show({ job }: Props) {
         router.post(route('tutor.jobs.reject', job.id));
     };
 
-    function formatBudget(min: number | null, max: number | null): string {
-        if (min && max) return `RM ${min} - RM ${max}`;
-        if (min) return `From RM ${min}`;
-        if (max) return `Up to RM ${max}`;
+    // Budgets arrive as decimal strings, so they are formatted rather than
+    // interpolated raw — otherwise a budget of 50.00 reads as "RM 50.00".
+    function formatBudget(min: string | null, max: string | null): string {
+        const rm = (v: string) => `RM ${Number(v).toFixed(0)}`;
+        if (min && max) return `${rm(min)} - ${rm(max)}`;
+        if (min) return `From ${rm(min)}`;
+        if (max) return `Up to ${rm(max)}`;
         return 'Not specified';
     }
 
