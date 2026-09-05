@@ -11,10 +11,15 @@ type Payment = {
     paid_at: string | null;
     created_at: string;
     booking: {
-        tutor: { name: string };
-        student: { name: string };
-        subject: { name: string };
-    };
+        tutor: { name: string } | null;
+        student: { name: string } | null;
+        subject: { name: string } | null;
+    } | null;
+    tutor_request: {
+        matched_tutor: { name: string } | null;
+        subject: { name: string } | null;
+        student: { name: string } | null;
+    } | null;
     parent: { name: string };
     session: { session_date: string } | null;
 };
@@ -105,8 +110,8 @@ export default function PaymentsIndex({ payments, totals, filters }: Props) {
                                         {payment.session?.session_date ?? payment.created_at.split('T')[0]}
                                     </td>
                                     <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-900">{payment.parent.name}</td>
-                                    <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-900">{payment.booking.tutor.name}</td>
-                                    <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">{payment.booking.subject.name}</td>
+                                    <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-900">{payment.booking?.tutor?.name ?? payment.tutor_request?.matched_tutor?.name ?? '—'}</td>
+                                    <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">{payment.booking?.subject?.name ?? payment.tutor_request?.subject?.name ?? '—'}</td>
                                     <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-gray-900">RM {Number(payment.amount).toFixed(2)}</td>
                                     <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">RM {Number(payment.commission_amount).toFixed(2)}</td>
                                     <td className="whitespace-nowrap px-6 py-4 text-sm">

@@ -9,7 +9,7 @@ type BookingItem = {
     subject: { name: string };
     schedule_day: string;
     schedule_time: string;
-    hourly_rate: number;
+    hourly_rate: string;
     status: string;
 };
 
@@ -90,7 +90,7 @@ export default function BookingsIndex({ bookings, filters }: Props) {
                                         <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">{booking.subject.name}</td>
                                         <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500 capitalize">{booking.schedule_day}</td>
                                         <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">{booking.schedule_time}</td>
-                                        <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">{booking.hourly_rate.toFixed(2)}</td>
+                                        <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">{Number(booking.hourly_rate).toFixed(2)}</td>
                                         <td className="whitespace-nowrap px-6 py-4 text-sm">{statusBadge(booking.status)}</td>
                                         <td className="whitespace-nowrap px-6 py-4 text-sm">
                                             <Link

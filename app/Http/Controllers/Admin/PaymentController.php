@@ -11,7 +11,12 @@ class PaymentController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Payment::with(['booking.tutor', 'booking.student', 'booking.subject', 'parent', 'session']);
+        // A payment raised at approval has no booking until it succeeds, so
+        // fall back to the originating request for who and what it is for.
+        $query = Payment::with([
+            'booking.tutor', 'booking.student', 'booking.subject', 'parent', 'session',
+            'tutorRequest.matchedTutor:id,name', 'tutorRequest.subject:id,name', 'tutorRequest.student:id,name',
+        ]);
 
         if ($request->filled('status')) {
             $query->where('status', $request->status);
@@ -35,7 +40,10 @@ class PaymentController extends Controller
 
     public function show(Payment $payment)
     {
-        $payment->load(['booking.tutor', 'booking.student', 'booking.subject', 'parent', 'session']);
+        $payment->load([
+            'booking.tutor', 'booking.student', 'booking.subject', 'parent', 'session',
+            'tutorRequest.matchedTutor:id,name', 'tutorRequest.subject:id,name', 'tutorRequest.student:id,name',
+        ]);
 
         return Inertia::render('Admin/Payments/Show', [
             'payment' => $payment,

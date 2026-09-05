@@ -18,7 +18,7 @@ type BookingFull = {
     subject: { id: number; name: string };
     schedule_day: string;
     schedule_time: string;
-    hourly_rate: number;
+    hourly_rate: string;
     status: string;
     notes: string | null;
     created_at: string;
@@ -98,7 +98,7 @@ export default function BookingsShow({ booking }: Props) {
                             </div>
                             <div>
                                 <dt className="text-sm font-medium text-gray-500">Hourly Rate (RM)</dt>
-                                <dd className="mt-1 text-sm text-gray-900">{booking.hourly_rate.toFixed(2)}</dd>
+                                <dd className="mt-1 text-sm text-gray-900">{Number(booking.hourly_rate).toFixed(2)}</dd>
                             </div>
                             <div>
                                 <dt className="text-sm font-medium text-gray-500">Status</dt>

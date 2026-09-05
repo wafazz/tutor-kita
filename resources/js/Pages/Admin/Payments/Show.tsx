@@ -17,10 +17,15 @@ type Payment = {
         hourly_rate: string;
         commission_rate: string;
         duration_hours: string;
-        tutor: { name: string };
-        student: { name: string };
-        subject: { name: string };
-    };
+        tutor: { name: string } | null;
+        student: { name: string } | null;
+        subject: { name: string } | null;
+    } | null;
+    tutor_request: {
+        matched_tutor: { name: string } | null;
+        subject: { name: string } | null;
+        student: { name: string } | null;
+    } | null;
     parent: { name: string };
     session: { id: number; session_date: string; duration_minutes: number | null } | null;
 };
@@ -77,7 +82,7 @@ export default function PaymentShow({ payment }: Props) {
                                 <span className="text-sm font-bold text-gray-900">RM {Number(payment.amount).toFixed(2)}</span>
                             </div>
                             <div className="flex justify-between py-3">
-                                <span className="text-sm text-gray-500">Commission ({Number(payment.booking.commission_rate).toFixed(0)}%)</span>
+                                <span className="text-sm text-gray-500">Commission{payment.booking ? ` (${Number(payment.booking.commission_rate).toFixed(0)}%)` : ''}</span>
                                 <span className="text-sm text-gray-900">RM {Number(payment.commission_amount).toFixed(2)}</span>
                             </div>
                             <div className="flex justify-between py-3">
@@ -113,19 +118,19 @@ export default function PaymentShow({ payment }: Props) {
                             </div>
                             <div className="flex justify-between py-3">
                                 <span className="text-sm text-gray-500">Tutor</span>
-                                <span className="text-sm text-gray-900">{payment.booking.tutor.name}</span>
+                                <span className="text-sm text-gray-900">{payment.booking?.tutor?.name ?? payment.tutor_request?.matched_tutor?.name ?? '—'}</span>
                             </div>
                             <div className="flex justify-between py-3">
                                 <span className="text-sm text-gray-500">Student</span>
-                                <span className="text-sm text-gray-900">{payment.booking.student.name}</span>
+                                <span className="text-sm text-gray-900">{payment.booking?.student?.name ?? payment.tutor_request?.student?.name ?? '—'}</span>
                             </div>
                             <div className="flex justify-between py-3">
                                 <span className="text-sm text-gray-500">Subject</span>
-                                <span className="text-sm text-gray-900">{payment.booking.subject.name}</span>
+                                <span className="text-sm text-gray-900">{payment.booking?.subject?.name ?? payment.tutor_request?.subject?.name ?? '—'}</span>
                             </div>
                             <div className="flex justify-between py-3">
                                 <span className="text-sm text-gray-500">Rate</span>
-                                <span className="text-sm text-gray-900">RM {Number(payment.booking.hourly_rate).toFixed(2)}/hr × {Number(payment.booking.duration_hours).toFixed(1)}hr</span>
+                                <span className="text-sm text-gray-900">{payment.booking ? `RM ${Number(payment.booking.hourly_rate).toFixed(2)}/hr × ${Number(payment.booking.duration_hours).toFixed(1)}hr` : 'Not booked yet'}</span>
                             </div>
                             {payment.session && (
                                 <div className="flex justify-between py-3">
