@@ -34,11 +34,4 @@ class Centre extends Model
     {
         return $this->owner_user_id === null;
     }
-
-    /** The address a geocoder should resolve. */
-    public function geocodableAddress(): string
-    {
-        return collect([$this->address, $this->area, $this->postcode, $this->state, 'Malaysia'])
-            ->filter()->implode(', ');
-    }
 }

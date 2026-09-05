@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Tutor;
 use App\Http\Controllers\Controller;
 use App\Models\Subject;
 use App\Models\User;
+use App\Support\Geocoding\GeocoderManager;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -38,6 +39,11 @@ class ProfileController extends Controller
             'availability' => 'nullable|array',
             // Where this tutor's payouts are sent. Optional so an incomplete
             // profile can still be saved, but all three are needed to be paid.
+            'address' => 'nullable|string|max:500',
+            'postcode' => 'nullable|string|max:10',
+            // How far this tutor will travel to a student's home. Null means
+            // unanswered, not "will not travel".
+            'travel_radius_km' => 'nullable|integer|min:0|max:200',
             'bank_name' => 'nullable|string|max:100',
             'bank_account_number' => 'nullable|string|max:34|regex:/^[A-Za-z0-9]+$/',
             'bank_account_name' => 'nullable|string|max:255',
@@ -49,7 +55,14 @@ class ProfileController extends Controller
                 ->toArray();
         }
 
-        $user->tutorProfile->update($validated);
+        $profile = $user->tutorProfile;
+        $profile->update($validated);
+
+        // Place the tutor so distance matching can reach them; failure leaves
+        // them unplaced for geocode:backfill rather than blocking the save.
+        if (app(GeocoderManager::class)->applyTo($profile)) {
+            $profile->save();
+        }
 
         return redirect()->back()->with('success', 'Profile updated successfully.');
     }

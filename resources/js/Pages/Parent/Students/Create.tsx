@@ -11,6 +11,10 @@ export default function StudentsCreate() {
         school: '',
         education_level: '',
         notes: '',
+        address: '',
+        area: '',
+        state: '',
+        postcode: '',
     });
 
     const submit: FormEventHandler = (e) => {
@@ -94,6 +98,66 @@ export default function StudentsCreate() {
                                 />
                                 {errors.notes && <p className="mt-1 text-sm text-red-600">{errors.notes}</p>}
                             </div>
+
+                            <div className="border-t border-gray-200 pt-6">
+                                <h3 className="text-base font-semibold text-gray-900">Home address</h3>
+                                <p className="mt-1 text-sm text-gray-500">
+                                    Used to find tutors near you when the tutor travels to your home, or to
+                                    show which centres are within reach. Optional, but without it we cannot
+                                    match by distance.
+                                </p>
+
+                                <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                                    <div className="sm:col-span-2">
+                                        <label className="block text-sm font-medium text-gray-700">Address</label>
+                                        <input
+                                            type="text"
+                                            value={data.address}
+                                            onChange={(e) => setData('address', e.target.value)}
+                                            placeholder="e.g. 12 Jalan Mawar 3"
+                                            className="mt-1 block w-full rounded-lg border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                        />
+                                        {errors.address && <p className="mt-1 text-sm text-red-600">{errors.address}</p>}
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700">Area</label>
+                                        <input
+                                            type="text"
+                                            value={data.area}
+                                            onChange={(e) => setData('area', e.target.value)}
+                                            placeholder="e.g. Petaling Jaya"
+                                            className="mt-1 block w-full rounded-lg border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                        />
+                                        {errors.area && <p className="mt-1 text-sm text-red-600">{errors.area}</p>}
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700">Postcode</label>
+                                        <input
+                                            type="text"
+                                            value={data.postcode}
+                                            onChange={(e) => setData('postcode', e.target.value)}
+                                            placeholder="e.g. 46000"
+                                            className="mt-1 block w-full rounded-lg border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                        />
+                                        {errors.postcode && <p className="mt-1 text-sm text-red-600">{errors.postcode}</p>}
+                                    </div>
+
+                                    <div className="sm:col-span-2">
+                                        <label className="block text-sm font-medium text-gray-700">State</label>
+                                        <input
+                                            type="text"
+                                            value={data.state}
+                                            onChange={(e) => setData('state', e.target.value)}
+                                            placeholder="e.g. Selangor"
+                                            className="mt-1 block w-full rounded-lg border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                        />
+                                        {errors.state && <p className="mt-1 text-sm text-red-600">{errors.state}</p>}
+                                    </div>
+                                </div>
+                            </div>
+
 
                             <div className="flex items-center gap-4">
                                 <button

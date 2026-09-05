@@ -14,6 +14,8 @@ class SettingController extends Controller
         return Inertia::render('Admin/Settings/Index', [
             'settings' => [
                 'commission_rate' => Setting::get('commission_rate', '20'),
+                'geocoding_driver' => Setting::get('geocoding_driver', 'manual'),
+                'google_maps_api_key' => Setting::get('google_maps_api_key', ''),
                 'site_name' => Setting::get('site_name', 'TutorHUB'),
                 'bayarcash_api_key' => Setting::get('bayarcash_api_key', ''),
                 'bayarcash_secret_key' => Setting::get('bayarcash_secret_key', ''),
@@ -32,6 +34,8 @@ class SettingController extends Controller
     {
         $validated = $request->validate([
             'commission_rate' => 'required|numeric|min:0|max:100',
+            'geocoding_driver' => 'required|in:manual,postcode,google',
+            'google_maps_api_key' => 'nullable|string|max:255',
             'site_name' => 'required|string|max:255',
             'bayarcash_api_key' => 'nullable|string|max:1000',
             'bayarcash_secret_key' => 'nullable|string|max:1000',

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\ParentUser;
 
 use App\Http\Controllers\Controller;
 use App\Models\Student;
+use App\Support\Geocoding\GeocoderManager;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -29,11 +30,23 @@ class StudentController extends Controller
             'school' => 'nullable|string|max:255',
             'education_level' => 'nullable|string|max:255',
             'notes' => 'nullable|string|max:1000',
+            // Where lessons happen when the tutor travels to the student.
+            'address' => 'nullable|string|max:500',
+            'area' => 'nullable|string|max:255',
+            'state' => 'nullable|string|max:255',
+            'postcode' => 'nullable|string|max:10',
         ]);
 
         $validated['parent_id'] = auth()->id();
 
-        Student::create($validated);
+        $student = Student::create($validated);
+
+        // Resolve the address so the student can be matched by distance; a
+        // failure leaves them unplaced for the geocode:backfill command rather
+        // than blocking the save.
+        if (app(GeocoderManager::class)->applyTo($student)) {
+            $student->save();
+        }
 
         return redirect()->back()->with('success', 'Student added successfully.');
     }
@@ -57,9 +70,18 @@ class StudentController extends Controller
             'school' => 'nullable|string|max:255',
             'education_level' => 'nullable|string|max:255',
             'notes' => 'nullable|string|max:1000',
+            // Where lessons happen when the tutor travels to the student.
+            'address' => 'nullable|string|max:500',
+            'area' => 'nullable|string|max:255',
+            'state' => 'nullable|string|max:255',
+            'postcode' => 'nullable|string|max:10',
         ]);
 
         $student->update($validated);
+
+        if (app(GeocoderManager::class)->applyTo($student)) {
+            $student->save();
+        }
 
         return redirect()->back()->with('success', 'Student updated successfully.');
     }

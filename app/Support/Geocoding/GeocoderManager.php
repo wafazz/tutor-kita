@@ -56,4 +56,37 @@ class GeocoderManager implements Geocoder
     {
         return $this->driver()->name();
     }
+
+    /**
+     * Resolve a model's address onto it, returning whether it moved.
+     *
+     * Silent when geocoding is off or the address cannot be resolved: an
+     * unplaced record is a backfill candidate, never a reason to fail a save.
+     */
+    public function applyTo($model, bool $force = false): bool
+    {
+        if (! $force && $model->hasCoordinates() && ! $model->isDirty(['address', 'postcode'])) {
+            return false;
+        }
+
+        $address = trim($model->geocodableAddress());
+
+        if ($address === '' || $address === 'Malaysia') {
+            return false;
+        }
+
+        $point = $this->geocode($address, $model->postcode ?? null);
+
+        if (! $point) {
+            return false;
+        }
+
+        $model->forceFill([
+            'latitude' => $point->latitude,
+            'longitude' => $point->longitude,
+            'geocoded_at' => now(),
+        ]);
+
+        return true;
+    }
 }

@@ -10,6 +10,21 @@ use Illuminate\Database\Eloquent\Builder;
  */
 trait HasCoordinates
 {
+    /**
+     * The address a geocoder should resolve. Models with differently named
+     * columns override this.
+     */
+    public function geocodableAddress(): string
+    {
+        return collect([
+            $this->address ?? null,
+            $this->area ?? $this->location_area ?? null,
+            $this->postcode ?? null,
+            $this->state ?? $this->location_state ?? null,
+            'Malaysia',
+        ])->filter()->implode(', ');
+    }
+
     public function hasCoordinates(): bool
     {
         return $this->latitude !== null && $this->longitude !== null;

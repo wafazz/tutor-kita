@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\BookingController as AdminBookingController;
+use App\Http\Controllers\Admin\CentreController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\HqProfileController;
 use App\Http\Controllers\Admin\PackageController;
@@ -66,6 +67,11 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('ad
     Route::get('/dashboard', AdminDashboardController::class)->name('dashboard');
 
     Route::resource('subjects', SubjectController::class);
+
+    Route::get('/centres', [CentreController::class, 'index'])->name('centres.index');
+    Route::post('/centres', [CentreController::class, 'store'])->name('centres.store');
+    Route::put('/centres/{centre}', [CentreController::class, 'update'])->name('centres.update');
+    Route::delete('/centres/{centre}', [CentreController::class, 'destroy'])->name('centres.destroy');
     Route::get('/tutors', [AdminTutorController::class, 'index'])->name('tutors.index');
     Route::get('/tutors/create', [AdminTutorController::class, 'create'])->name('tutors.create');
     Route::post('/tutors', [AdminTutorController::class, 'store'])->name('tutors.store');

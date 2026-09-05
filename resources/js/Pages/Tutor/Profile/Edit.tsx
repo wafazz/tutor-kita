@@ -13,6 +13,9 @@ interface TutorProfile {
     location_state: string;
     availability: string[] | null;
     verification_status: string;
+    address: string | null;
+    postcode: string | null;
+    travel_radius_km: number | null;
     bank_name: string | null;
     bank_account_number: string | null;
     bank_account_name: string | null;
@@ -72,6 +75,9 @@ export default function Edit({ profile, subjects }: Props) {
         location_area: profile.location_area || '',
         location_state: profile.location_state || '',
         availability: profile.availability || [],
+        address: profile.address || '',
+        postcode: profile.postcode || '',
+        travel_radius_km: profile.travel_radius_km ?? '',
         bank_name: profile.bank_name || '',
         bank_account_number: profile.bank_account_number || '',
         bank_account_name: profile.bank_account_name || '',
@@ -260,6 +266,55 @@ export default function Edit({ profile, subjects }: Props) {
                                     ))}
                                 </div>
                                 {errors.availability && <p className="mt-1 text-sm text-red-600">{errors.availability}</p>}
+                            </div>
+
+                            <div className="border-t border-gray-200 pt-6">
+                                <h3 className="text-base font-semibold text-gray-900">Where you teach</h3>
+                                <p className="mt-1 text-sm text-gray-500">
+                                    Your address places you on the map. The travel radius is how far you are
+                                    willing to go to a student's home — leave it blank if you would rather
+                                    not travel, and students can still come to you or learn online.
+                                </p>
+
+                                <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                                    <div className="sm:col-span-2">
+                                        <label className="block text-sm font-medium text-gray-700">Address</label>
+                                        <input
+                                            type="text"
+                                            value={data.address}
+                                            onChange={(e) => setData('address', e.target.value)}
+                                            placeholder="e.g. 8 Jalan SS2/24"
+                                            className="mt-1 block w-full rounded-lg border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                        />
+                                        {errors.address && <p className="mt-1 text-sm text-red-600">{errors.address}</p>}
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700">Postcode</label>
+                                        <input
+                                            type="text"
+                                            value={data.postcode}
+                                            onChange={(e) => setData('postcode', e.target.value)}
+                                            placeholder="e.g. 47300"
+                                            className="mt-1 block w-full rounded-lg border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                        />
+                                        {errors.postcode && <p className="mt-1 text-sm text-red-600">{errors.postcode}</p>}
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700">Travel radius (km)</label>
+                                        <input
+                                            type="number"
+                                            min={0}
+                                            max={200}
+                                            value={data.travel_radius_km}
+                                            onChange={(e) => setData('travel_radius_km', e.target.value === '' ? '' : Number(e.target.value))}
+                                            placeholder="e.g. 15"
+                                            className="mt-1 block w-full rounded-lg border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                        />
+                                        {errors.travel_radius_km && <p className="mt-1 text-sm text-red-600">{errors.travel_radius_km}</p>}
+                                    </div>
+                                </div>
                             </div>
 
                             <div className="border-t border-gray-200 pt-6">
