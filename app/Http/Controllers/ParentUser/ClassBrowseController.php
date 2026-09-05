@@ -6,35 +6,76 @@ use App\Http\Controllers\Controller;
 use App\Models\ClassSession;
 use App\Models\Student;
 use App\Support\ClassEnroller;
+use App\Support\TutorMatcher;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
 class ClassBrowseController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $classes = ClassSession::with(['tutor:id,name', 'subject:id,name', 'centre:id,name,area,capacity', 'enrolments'])
+        $students = Student::where('parent_id', auth()->id())->orderBy('name')->get();
+
+        // Measured from the student's home, since that is who travels to a
+        // centre. With several children the nearest one wins, so a class in
+        // reach of any of them still appears.
+        $placed = $students->filter(fn (Student $s) => $s->hasCoordinates());
+
+        $radiusKm = (float) $request->input('radius', TutorMatcher::DEFAULT_RADIUS_KM);
+
+        $classes = ClassSession::with(['tutor:id,name', 'subject:id,name', 'centre:id,name,area,capacity,latitude,longitude', 'enrolments'])
             ->where('status', 'open')
             ->orderBy('schedule_day')
             ->get()
-            ->map(fn (ClassSession $c) => [
-                'id' => $c->id,
-                'title' => $c->title,
-                'tutor_name' => $c->tutor?->name,
-                'subject_name' => $c->subject?->name,
-                'centre_name' => $c->centre?->name,
-                'centre_area' => $c->centre?->area,
-                'is_online' => $c->delivery_mode->isOnline(),
-                'schedule_day' => $c->schedule_day,
-                'schedule_time' => $c->schedule_time,
-                'total_sessions' => $c->total_sessions,
-                'seats_left' => $c->seatsLeft(),
-                'price' => $c->priceForStudent(),
-            ]);
+            ->map(function (ClassSession $c) use ($placed) {
+                // Online classes have nowhere to be, so distance does not apply.
+                $distance = $c->delivery_mode->isOnline() || ! $c->centre?->hasCoordinates()
+                    ? null
+                    : $placed->map(fn (Student $s) => $c->centre->distanceTo((float) $s->latitude, (float) $s->longitude))
+                        ->filter()
+                        ->min();
+
+                return [
+                    'id' => $c->id,
+                    'title' => $c->title,
+                    'tutor_name' => $c->tutor?->name,
+                    'subject_name' => $c->subject?->name,
+                    'centre_name' => $c->centre?->name,
+                    'centre_area' => $c->centre?->area,
+                    'is_online' => $c->delivery_mode->isOnline(),
+                    'schedule_day' => $c->schedule_day,
+                    'schedule_time' => $c->schedule_time,
+                    'total_sessions' => $c->total_sessions,
+                    'seats_left' => $c->seatsLeft(),
+                    'price' => $c->priceForStudent(),
+                    'distance_km' => $distance,
+                    // An unplaced centre cannot be measured, and saying nothing
+                    // would read as "nearby" rather than "unknown".
+                    'distance_known' => $c->delivery_mode->isOnline() || $distance !== null,
+                ];
+            });
+
+        $total = $classes->count();
+
+        // Only filter once there is somewhere to measure from — otherwise a
+        // parent with no address would see nothing at all rather than
+        // everything, which looks like the platform is empty.
+        $filtered = $placed->isEmpty()
+            ? $classes
+            : $classes->filter(fn (array $c) => $c['is_online']
+                || $c['distance_km'] === null
+                || $c['distance_km'] <= $radiusKm);
 
         return Inertia::render('Parent/Classes/Index', [
-            'classes' => $classes,
-            'students' => Student::where('parent_id', auth()->id())->orderBy('name')->get(['id', 'name']),
+            'classes' => $filtered
+                ->sortBy(fn (array $c) => $c['distance_km'] ?? -1)
+                ->values(),
+            'students' => $students->map(fn (Student $s) => ['id' => $s->id, 'name' => $s->name]),
+            'filters' => [
+                'radius' => $radiusKm,
+                'hasLocation' => $placed->isNotEmpty(),
+                'hidden' => $total - $filtered->count(),
+            ],
         ]);
     }
 
