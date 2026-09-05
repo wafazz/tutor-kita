@@ -1,0 +1,141 @@
+<?php
+
+namespace App\Support;
+
+use App\Models\Booking;
+use App\Models\ClassEnrolment;
+use App\Models\ClassSession;
+use App\Models\Payment;
+use App\Models\Student;
+use Illuminate\Support\Facades\DB;
+
+/**
+ * Puts a student into a group class.
+ *
+ * Each enrolment creates that student's own booking and payment, so group
+ * revenue moves through exactly the same ledger as one-to-one work — the same
+ * allocation, accrual, claiming and invariants. What differs is only how much
+ * of it the tutor is owed, which the class decides in total and this divides
+ * across the bookings.
+ */
+class ClassEnroller
+{
+    public function enrol(ClassSession $class, Student $student): ClassEnrolment
+    {
+        return DB::transaction(function () use ($class, $student) {
+            // Re-read under lock: two parents can take the last seat at once.
+            $class = ClassSession::whereKey($class->getKey())->lockForUpdate()->firstOrFail();
+            $class->load('centre');
+
+            if (! $class->hasSeat()) {
+                throw new \RuntimeException("'{$class->title}' is full.");
+            }
+
+            if ($class->enrolments()->where('student_id', $student->id)->exists()) {
+                throw new \RuntimeException("{$student->name} is already enrolled in this class.");
+            }
+
+            $price = $class->priceForStudent();
+
+            $payment = Payment::create([
+                'parent_id' => $student->parent_id,
+                'amount' => $price,
+                // Provisional: the tutor's real share is settled across the
+                // class once the headcount is known.
+                'commission_amount' => $price,
+                'tutor_payout' => 0,
+                'payment_method' => 'fpx',
+                'status' => 'pending',
+            ]);
+
+            $booking = Booking::create([
+                'tutor_id' => $class->tutor_id,
+                'parent_id' => $student->parent_id,
+                'student_id' => $student->id,
+                'subject_id' => $class->subject_id,
+                'schedule_day' => $class->schedule_day ?? 'monday',
+                'schedule_time' => $class->schedule_time ?? '10:00',
+                'duration_hours' => $class->duration_hours,
+                'location_type' => $class->delivery_mode->isOnline() ? 'online' : 'center',
+                'delivery_mode' => $class->delivery_mode->value,
+                'hourly_rate' => 0,
+                'commission_rate' => $class->commissionRate(),
+                'amount' => $price,
+                'commission_amount' => $price,
+                'tutor_payout' => 0,
+                'payment_id' => $payment->id,
+                'status' => 'confirmed',
+            ]);
+
+            $payment->update(['booking_id' => $booking->id]);
+
+            $enrolment = ClassEnrolment::create([
+                'class_session_id' => $class->id,
+                'student_id' => $student->id,
+                'parent_id' => $student->parent_id,
+                'booking_id' => $booking->id,
+                'payment_id' => $payment->id,
+                'status' => 'pending',
+            ]);
+
+            $this->settle($class->fresh());
+
+            return $enrolment->fresh();
+        });
+    }
+
+    /**
+     * Divide the class's total tutor payout across the enrolled bookings.
+     *
+     * Re-run whenever the headcount changes, because under a flat or
+     * flat-plus-head model every student's share moves when one more joins.
+     * Money already committed to a payout is never disturbed: a booking's share
+     * cannot fall below what has been paid out for it.
+     */
+    public function settle(ClassSession $class): void
+    {
+        $bookings = Booking::whereIn(
+            'id',
+            $class->activeEnrolments()->pluck('booking_id')->filter()
+        )->orderBy('id')->get();
+
+        if ($bookings->isEmpty()) {
+            return;
+        }
+
+        $total = $class->tutorPayoutTotal($bookings->count());
+        $each = round($total / $bookings->count(), 2);
+
+        $running = 0.0;
+        $last = $bookings->count() - 1;
+
+        foreach ($bookings->values() as $i => $booking) {
+            // The remainder lands on the final booking so the shares always sum
+            // back to the class total.
+            $share = $i === $last ? round($total - $running, 2) : $each;
+            $running += $share;
+
+            $share = max($share, (float) $booking->paid_out_amount);
+
+            $booking->forceFill([
+                'tutor_payout' => $share,
+                'commission_amount' => round((float) $booking->amount - $share, 2),
+            ])->save();
+
+            if ($booking->payment) {
+                $booking->payment->forceFill([
+                    'tutor_payout' => $share,
+                    'commission_amount' => round((float) $booking->payment->amount - $share, 2),
+                ])->save();
+            }
+        }
+    }
+
+    public function cancel(ClassEnrolment $enrolment): void
+    {
+        DB::transaction(function () use ($enrolment) {
+            $enrolment->update(['status' => 'cancelled']);
+            $this->settle($enrolment->classSession->fresh());
+        });
+    }
+}
