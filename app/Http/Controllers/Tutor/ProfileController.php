@@ -36,6 +36,11 @@ class ProfileController extends Controller
             'location_state' => 'nullable|string|max:255',
             'ic_number' => 'nullable|string|max:20',
             'availability' => 'nullable|array',
+            // Where this tutor's payouts are sent. Optional so an incomplete
+            // profile can still be saved, but all three are needed to be paid.
+            'bank_name' => 'nullable|string|max:100',
+            'bank_account_number' => 'nullable|string|max:34|regex:/^[A-Za-z0-9]+$/',
+            'bank_account_name' => 'nullable|string|max:255',
         ]);
 
         if (! empty($validated['subjects'])) {

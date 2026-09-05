@@ -28,6 +28,11 @@ type PayoutBooking = {
 type Props = {
     payout: Payout;
     bookings: PayoutBooking[];
+    bankDetails: {
+        bank_name: string;
+        bank_account_number: string;
+        bank_account_name: string;
+    } | null;
 };
 
 const statusColors: Record<string, string> = {
@@ -36,7 +41,7 @@ const statusColors: Record<string, string> = {
     paid: 'bg-green-100 text-green-800',
 };
 
-export default function PayoutShow({ payout, bookings }: Props) {
+export default function PayoutShow({ payout, bookings, bankDetails }: Props) {
     const { data, setData, post, processing } = useForm({ reference: '' });
 
     const handleMarkProcessing = () => {
@@ -105,6 +110,39 @@ export default function PayoutShow({ payout, bookings }: Props) {
                                 <div className="flex justify-between py-3">
                                     <span className="text-sm text-gray-500">Paid At</span>
                                     <span className="text-sm text-gray-900">{payout.paid_at}</span>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Where the money goes */}
+                    <div className="overflow-hidden rounded-xl bg-white shadow-sm">
+                        <div className="border-b px-6 py-4">
+                            <h3 className="font-semibold text-gray-900">Payout destination</h3>
+                        </div>
+                        <div className="px-6 py-4">
+                            {bankDetails ? (
+                                <dl className="divide-y divide-gray-200">
+                                    <div className="flex justify-between py-3">
+                                        <dt className="text-sm text-gray-500">Bank</dt>
+                                        <dd className="text-sm text-gray-900">{bankDetails.bank_name}</dd>
+                                    </div>
+                                    <div className="flex justify-between py-3">
+                                        <dt className="text-sm text-gray-500">Account number</dt>
+                                        <dd className="font-mono text-sm text-gray-900">{bankDetails.bank_account_number}</dd>
+                                    </div>
+                                    <div className="flex justify-between py-3">
+                                        <dt className="text-sm text-gray-500">Account holder</dt>
+                                        <dd className="text-sm text-gray-900">{bankDetails.bank_account_name}</dd>
+                                    </div>
+                                </dl>
+                            ) : (
+                                <div className="rounded-lg bg-amber-50 p-4">
+                                    <p className="text-sm font-medium text-amber-800">No bank details on file</p>
+                                    <p className="mt-1 text-sm text-amber-700">
+                                        This tutor has not completed their payout details, so this payout cannot be
+                                        transferred yet. Ask them to fill in the payout section of their profile.
+                                    </p>
                                 </div>
                             )}
                         </div>

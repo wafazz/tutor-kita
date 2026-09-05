@@ -13,6 +13,9 @@ interface TutorProfile {
     location_state: string;
     availability: string[] | null;
     verification_status: string;
+    bank_name: string | null;
+    bank_account_number: string | null;
+    bank_account_name: string | null;
 }
 
 interface SubjectOption {
@@ -69,6 +72,9 @@ export default function Edit({ profile, subjects }: Props) {
         location_area: profile.location_area || '',
         location_state: profile.location_state || '',
         availability: profile.availability || [],
+        bank_name: profile.bank_name || '',
+        bank_account_number: profile.bank_account_number || '',
+        bank_account_name: profile.bank_account_name || '',
     });
 
     const grouped = subjects.reduce<Record<string, SubjectOption[]>>((acc, s) => {
@@ -254,6 +260,51 @@ export default function Edit({ profile, subjects }: Props) {
                                     ))}
                                 </div>
                                 {errors.availability && <p className="mt-1 text-sm text-red-600">{errors.availability}</p>}
+                            </div>
+
+                            <div className="border-t border-gray-200 pt-6">
+                                <h3 className="text-base font-semibold text-gray-900">Payout details</h3>
+                                <p className="mt-1 text-sm text-gray-500">
+                                    Where your earnings are sent. All three fields are needed before you can be paid.
+                                </p>
+
+                                <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700">Bank</label>
+                                        <input
+                                            type="text"
+                                            value={data.bank_name}
+                                            onChange={(e) => setData('bank_name', e.target.value)}
+                                            placeholder="e.g. Maybank"
+                                            className="mt-1 block w-full rounded-lg border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                        />
+                                        {errors.bank_name && <p className="mt-1 text-sm text-red-600">{errors.bank_name}</p>}
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700">Account number</label>
+                                        <input
+                                            type="text"
+                                            value={data.bank_account_number}
+                                            onChange={(e) => setData('bank_account_number', e.target.value)}
+                                            placeholder="Digits only"
+                                            className="mt-1 block w-full rounded-lg border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                        />
+                                        {errors.bank_account_number && <p className="mt-1 text-sm text-red-600">{errors.bank_account_number}</p>}
+                                    </div>
+
+                                    <div className="sm:col-span-2">
+                                        <label className="block text-sm font-medium text-gray-700">Account holder name</label>
+                                        <input
+                                            type="text"
+                                            value={data.bank_account_name}
+                                            onChange={(e) => setData('bank_account_name', e.target.value)}
+                                            placeholder="Exactly as it appears on your bank account"
+                                            className="mt-1 block w-full rounded-lg border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                        />
+                                        {errors.bank_account_name && <p className="mt-1 text-sm text-red-600">{errors.bank_account_name}</p>}
+                                    </div>
+                                </div>
                             </div>
 
                             <div className="flex justify-end">

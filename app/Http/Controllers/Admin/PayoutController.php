@@ -171,7 +171,9 @@ class PayoutController extends Controller
 
     public function show(TutorPayout $payout)
     {
-        $payout->load('tutor');
+        $payout->load('tutor.tutorProfile');
+
+        $profile = $payout->tutor?->tutorProfile;
 
         // The bookings this payout actually claimed — a historical record, not
         // re-derived from the period, so it stays accurate as data changes.
@@ -187,6 +189,15 @@ class PayoutController extends Controller
         return Inertia::render('Admin/Payouts/Show', [
             'payout' => $payout,
             'bookings' => $bookings,
+            // Where this payout is actually sent. Shown in full because the
+            // admin has to key it into the bank to make the transfer.
+            'bankDetails' => $profile?->hasBankDetails()
+                ? [
+                    'bank_name' => $profile->bank_name,
+                    'bank_account_number' => $profile->bank_account_number,
+                    'bank_account_name' => $profile->bank_account_name,
+                ]
+                : null,
         ]);
     }
 

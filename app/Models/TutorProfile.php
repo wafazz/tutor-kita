@@ -10,6 +10,7 @@ class TutorProfile extends Model
         'user_id', 'ic_number', 'subjects', 'education_level', 'experience_years',
         'bio', 'hourly_rate', 'location_area', 'location_state', 'latitude', 'longitude',
         'availability', 'verification_status', 'verified_at', 'documents', 'rating_avg', 'total_sessions', 'commission_rate',
+        'bank_name', 'bank_account_number', 'bank_account_name',
     ];
 
     protected function casts(): array
@@ -22,11 +23,41 @@ class TutorProfile extends Model
             'hourly_rate' => 'decimal:2',
             'rating_avg' => 'decimal:2',
             'commission_rate' => 'decimal:2',
+            // Financial PII: encrypted at rest so a database dump does not
+            // expose tutors' account numbers.
+            'bank_account_number' => 'encrypted',
         ];
     }
 
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    /**
+     * Whether this tutor can actually be paid.
+     */
+    public function hasBankDetails(): bool
+    {
+        return filled($this->bank_name)
+            && filled($this->bank_account_number)
+            && filled($this->bank_account_name);
+    }
+
+    /**
+     * Account number with all but the last four digits hidden, for screens
+     * that only need to confirm which account is on file.
+     */
+    public function maskedAccountNumber(): ?string
+    {
+        $number = $this->bank_account_number;
+
+        if (blank($number)) {
+            return null;
+        }
+
+        return strlen($number) <= 4
+            ? $number
+            : str_repeat('•', strlen($number) - 4).substr($number, -4);
     }
 }
