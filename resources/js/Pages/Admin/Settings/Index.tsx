@@ -10,6 +10,8 @@ type Settings = {
     billplz_x_signature_key: string;
     billplz_sandbox: string;
     payments_manual_mode: string;
+    acceptance_expiry_hours: string;
+    payment_expiry_hours: string;
     resend_api_key: string;
     resend_from_email: string;
     resend_from_name: string;
@@ -92,6 +94,29 @@ export default function SettingsIndex({ settings }: { settings: Settings }) {
                             hint="Applied to new tutors by default"
                         />
                     </div>
+                </SectionCard>
+
+                <SectionCard title="Marketplace holds" description="How long a tutor or a class seat stays reserved before it is released.">
+                    <div className="grid gap-4 sm:grid-cols-2">
+                        <InputField
+                            label="Tutor acceptance window (hours)"
+                            type="number"
+                            value={data.acceptance_expiry_hours}
+                            onChange={e => setData('acceptance_expiry_hours', e.target.value)}
+                            hint="After this, an unanswered match reopens for another tutor"
+                        />
+                        <InputField
+                            label="Payment window (hours)"
+                            type="number"
+                            value={data.payment_expiry_hours}
+                            onChange={e => setData('payment_expiry_hours', e.target.value)}
+                            hint="After this, an unpaid invoice expires and the hold is released"
+                        />
+                    </div>
+                    <p className="mt-3 text-xs text-gray-500">
+                        A matched tutor is unavailable to everyone else while they decide, and a held seat is
+                        unavailable while its payment is outstanding. Nothing already paid for is ever released.
+                    </p>
                 </SectionCard>
 
                 {/* Billplz */}
