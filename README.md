@@ -1,6 +1,9 @@
 # TutorHUB
 
-A full-stack **Tutor Supply & Demand Marketplace Platform** that connects parents seeking tutors with qualified tutors. Manages the complete lifecycle — from tutor requests and matching, to session check-in/check-out with GPS & QR verification, payments via BayarCash FPX, and monthly tutor payouts.
+A tuition marketplace connecting parents with tutors across Malaysia. It covers the
+whole lifecycle — requests and matching, five ways a lesson can be delivered, session
+check-in with GPS and QR verification, collection through BayarCash FPX, and tutor
+payouts.
 
 ## Tech Stack
 
@@ -10,86 +13,154 @@ A full-stack **Tutor Supply & Demand Marketplace Platform** that connects parent
 | Frontend | React 19 + TypeScript + Tailwind CSS 4 |
 | Bridge | Inertia.js 2.0 (server-driven SPA) |
 | Database | MySQL |
-| Auth | Laravel Breeze + custom role middleware |
-| Payment | BayarCash FPX integration |
+| Auth | Laravel Breeze + role middleware |
+| Collection | BayarCash FPX |
 | Build | Vite 7 |
-| PWA | Service Worker + Web App Manifest |
+| Tests | Pest / PHPUnit — 208 tests, 790 assertions |
 
-## Features
+## Delivery modes
 
-### Role-Based Access
+A lesson can happen in one of five ways, and the mode drives pricing, matching and
+scheduling rather than being a label:
 
-| Role | Capabilities |
-|------|-------------|
-| **Admin** | Dashboard analytics, tutor verification, commission settings, subject & package management, request matching, session oversight, payment & payout processing, platform settings |
-| **Tutor** | Profile management, accept/reject job offers, session check-in/out (QR + GPS), proof photo uploads, earnings dashboard, view reviews |
-| **Parent** | Manage student profiles, create tutor requests with package selection, track bookings & sessions, pay via BayarCash FPX, leave reviews |
+| Mode | Group | Who travels | Distance matters |
+|------|-------|-------------|------------------|
+| `home_student` | – | tutor, to the student's home | yes |
+| `home_tutor` | – | student, to the tutor's home | yes |
+| `centre_group` | **yes** | student, to a centre | yes |
+| `online_solo` | – | – | no |
+| `online_group` | **yes** | – | no |
 
-### Core Modules
+`DeliveryMode` is a PHP enum over a plain string column, so adding a sixth mode is a
+constant and a rate row rather than a migration. Each mode answers `isGroup()`,
+`needsGeo()` and `traveller()` — the last decides which address a radius is measured
+from, so matching asks the mode instead of branching on it everywhere.
 
-- **Tutor Verification** — Admin reviews and approves/rejects tutor applications
-- **Request & Matching** — Parents create requests → Admin matches with suitable tutors → Tutors accept/reject
-- **Package System** — Dynamic packages with subject associations and session bundles
-- **Session Check-In/Out** — QR code + GPS location capture for fraud prevention, with proof photo requirement before check-out
-- **Payment Flow** — Auto-created pending payments → Parent pays via BayarCash FPX → Booking confirmed
-- **Commission & Payouts** — Configurable commission per tutor (default 20%), monthly batch payout processing
-- **Reviews** — 1–5 star ratings with comments, auto-updates tutor average rating
-- **PWA** — Offline support, installable as a mobile app
+## Money
+
+### Pricing
+
+Rates live in `subject_rates`, keyed by subject and delivery mode, with `max_students`
+for group modes. Resolution walks explicit rates up a fallback chain and only then the
+legacy two-column rates, so a partly configured subject prices rather than dropping to
+zero. `Subject::hasOwnRateFor()` exposes an inherited rate, so a group class quietly
+charging the one-to-one price is visible rather than hidden.
+
+Approval refuses to raise a zero-amount payment, naming the subject at fault.
+
+### Commission
+
+Per tutor, defaulting to the platform rate in Admin → Settings
+(`Setting::defaultCommissionRate()`). New tutors inherit it; changing it never reprices
+existing ones.
+
+### When a tutor is paid
+
+Set per package, so different products can settle differently:
+
+| Policy | Payable |
+|--------|---------|
+| `upfront` | as soon as the parent's payment succeeds |
+| `per_session` | accrues 1/`total_sessions` per completed session |
+| `on_completion` | only once every session is delivered |
+
+Group classes additionally choose **how much**, per class:
+
+| Model | Tutor earns |
+|-------|-------------|
+| `per_student` | their commission share of what the students paid |
+| `flat` | a fixed amount, whatever the headcount |
+| `flat_plus_head` | a floor, plus a per-head amount past a threshold |
+
+A class paying out more than it collects is flagged before it runs, not at payout time.
+
+### The ledger
+
+One booking is one student is one payment — including group seats, so group revenue
+flows through exactly the same path as one-to-one work. A class decides only the
+tutor's total; that total is divided across the enrolled bookings.
+
+`bookings.paid_out_amount` is the guard against paying the same money twice, and the
+`booking_tutor_payout` pivot records which run paid which slice. Payout runs claim only
+unpaid accrual under a transaction, so a booking is payable exactly once however the
+periods are drawn.
+
+Payouts are recorded, not sent: `markPaid` stores a reference and the transfer is made
+in your bank. Tutors supply bank details in their profile; the account number is
+encrypted at rest.
+
+## Geography
+
+Students, tutors and centres each carry an address and optional coordinates. Tutors also
+set a `travel_radius_km`.
+
+Coordinates can be set three ways:
+
+1. **By the person themselves** — "use my current location" in the browser, or typing
+   the coordinates. This is the default path and needs no external service.
+2. **By geocoding** — a driver chosen in Admin → Settings (`manual`, `postcode` or
+   `google`). Defaults to `manual`, so nothing depends on a paid service or billing
+   account until you choose it.
+3. **By backfill** — `php artisan geocode:backfill` for existing records.
+
+A coordinate someone set is never replaced by geocoding: their own pin is more precise
+than a postcode centroid. A record without coordinates is *excluded* from distance
+results rather than matched wrongly, and the screens say so.
+
+The `postcodes` table holds the Malaysian directory (2,931 entries, all 16 states). It
+maps a postcode to a city and state and **carries no coordinates**, so it fills address
+forms automatically but cannot place anyone on a map on its own.
+
+### Matching and clashes
+
+`TutorMatcher` narrows candidates by distance where the mode needs it, measured from
+whichever address the traveller is heading to. An unplaced student falls back to every
+tutor rather than none, so matching degrades to a manual pick instead of appearing
+broken.
+
+`ScheduleConflictDetector` refuses to double-book **either** party. It catches literal
+overlaps and, for in-person work, journeys that cannot be made: a lesson in Petaling
+Jaya ending at 12:00 and one in Klang starting at 12:00 do not overlap on a clock but
+cannot both be taught. Travel time is estimated from the coordinates already stored.
 
 ## Getting Started
 
 ### Prerequisites
 
-- PHP 8.2+
-- Composer
-- Node.js 18+
-- MySQL
+PHP 8.2+, Composer, MySQL, and Node.js 20.19+ or 22.12+ — the range Vite 7
+requires. Older 20.x releases will fail to install.
 
 ### Installation
 
 ```bash
-# Clone the repository
 git clone https://github.com/wafazz/tutor-kita.git
 cd tutor-kita
 
-# Install dependencies
 composer install
-npm install --legacy-peer-deps
+npm install
 
-# Environment setup
 cp .env.example .env
 php artisan key:generate
 ```
 
-### Configure `.env`
-
-```env
-DB_CONNECTION=mysql
-DB_HOST=127.0.0.1
-DB_PORT=3306
-DB_DATABASE=tutorhub
-DB_USERNAME=root
-DB_PASSWORD=
-```
-
-### Database Setup
+Configure the database in `.env`, then:
 
 ```bash
 php artisan migrate
 php artisan db:seed
 ```
 
-### Run Development Server
+Seeding loads subjects, packages, demo accounts and the postcode directory.
+
+### Running it
 
 ```bash
-# Terminal 1 — Laravel
-php artisan serve
-
-# Terminal 2 — Vite (frontend assets)
-npm run dev
+composer dev
 ```
 
-Visit `http://localhost:8000`
+That starts the server, queue worker, log viewer and Vite together on
+`http://localhost:8000`. Ctrl+C stops all four. For a lighter setup, `php artisan serve`
+and `npm run dev` in two terminals is enough for UI work.
 
 ### Default Accounts
 
@@ -99,56 +170,88 @@ Visit `http://localhost:8000`
 | Tutor | `tutor@tutorhub.my` | `tutor123` |
 | Parent | `parent@tutorhub.my` | `parent123` |
 
+### Checks
+
+```bash
+php artisan test        # 208 tests
+vendor/bin/pint         # formatting
+npx tsc --noEmit        # frontend types
+```
+
+## Roles
+
+| Role | Capabilities |
+|------|-------------|
+| **Admin** | Dashboard, tutor verification, commission and platform settings, subjects and rates, packages and payout policies, centres, group classes, request matching, payments and payouts |
+| **Tutor** | Profile with address, travel radius and bank details, accept or reject jobs, own group classes, session check-in/out with QR and GPS, proof photos, earnings, reviews |
+| **Parent** | Students with addresses, tutor requests with package selection, browse and enrol in group classes by distance, bookings and sessions, pay by FPX, reviews, reports |
+
 ## Project Structure
 
 ```
 app/
-├── Http/Controllers/
-│   ├── Admin/          # 14 controllers (dashboard, tutors, subjects, requests, etc.)
-│   ├── Tutor/          # 7 controllers (profile, jobs, sessions, earnings, etc.)
-│   ├── ParentUser/     # 7 controllers (students, requests, payments, etc.)
-│   └── Auth/           # Registration & login
-├── Models/             # User, TutorProfile, Student, Subject, Package, Booking,
-│                       # TutorRequest, TutorSession, Payment, TutorPayout, Review
-└── Http/Middleware/
-    └── EnsureRole.php  # Role-based access control
+├── Enums/
+│   ├── DeliveryMode.php        five ways a lesson happens
+│   └── GroupPayoutModel.php    how a group tutor is paid
+├── Support/
+│   ├── TutorMatcher.php        candidates, narrowed by distance
+│   ├── ScheduleConflictDetector.php   overlaps and unmakeable journeys
+│   ├── SessionScheduler.php    lays a booking's weeks out
+│   ├── ClassEnroller.php       seats, and the money that follows
+│   └── Geocoding/              contract, manual/postcode/google drivers
+├── Http/Controllers/           Admin (16), Tutor (9), ParentUser (9), Auth
+├── Models/                     + Concerns/HasCoordinates
+└── Http/Middleware/EnsureRole.php
 
-resources/js/Pages/
-├── Admin/              # 13 module directories
-├── Tutor/              # 6 module directories
-├── Parent/             # 6 module directories
-├── Auth/               # Login, Register, RegisterParent
-└── Tutors/             # Public tutor browse page
+database/
+├── data/postcodes.csv          the Malaysian directory
+└── seeders/
 ```
 
-## Database Schema
+## Database
 
-12 core tables covering the full platform lifecycle:
+28 tables. The ones specific to how this platform works:
 
-- `users` — All platform users with role field (admin/tutor/parent)
-- `tutor_profiles` — Verification status, subjects, rates, GPS coordinates, commission rate
-- `students` — Parent's children profiles
-- `subjects` — Available subjects with categories and hourly rates
-- `packages` — Tutoring packages with session bundles (many-to-many with subjects)
-- `tutor_requests` — Parent requests with grouping, matching, and tutor acceptance
-- `bookings` — Confirmed tutor-parent engagements
-- `tutor_sessions` — Individual sessions with QR check-in tokens, GPS, proof photos
-- `payments` — BayarCash FPX transactions with commission breakdown
-- `tutor_payouts` — Monthly payout batch records
-- `reviews` — Star ratings and comments
-- `settings` — Platform configuration key-value store
+| Table | Holds |
+|-------|-------|
+| `subject_rates` | a rate per subject per delivery mode, with group capacity |
+| `centres` | places students travel to; `owner_user_id` null means platform-run |
+| `class_sessions` | a group class: schedule, seats, price, payout model |
+| `class_enrolments` | a seat, linked to its own booking and payment |
+| `booking_tutor_payout` | which payout run paid which slice of a booking |
+| `postcodes` | the Malaysian postcode directory |
+| `student_reports` | marks and progress |
 
-## Payment Flow
+Alongside the core: `users`, `tutor_profiles`, `students`, `subjects`, `packages`,
+`tutor_requests`, `bookings`, `tutor_sessions`, `payments`, `tutor_payouts`, `reviews`,
+`settings`.
+
+## How money moves
 
 ```
-Parent creates request
-    → Admin matches tutor
-        → Tutor accepts offer
-            → Payment record created (pending)
-                → Parent pays via BayarCash FPX
-                    → Booking auto-created on success
-                        → Sessions auto-generated from schedule
+Parent creates a request
+  → Admin matches a tutor          (refused if either party is already busy)
+    → Payment raised, pending      (priced by subject × delivery mode × package)
+      → Parent pays by FPX         (or manual, when no gateway keys are set)
+        → Booking created, sessions laid out across the weeks
+          → Tutor delivers and checks in
+            → Payout accrues per the package's policy
+              → Admin runs a payout, which claims only unpaid accrual
+                → Transfer made in the bank, marked paid with a reference
 ```
+
+Group classes join at the booking step: enrolling creates that student's own booking and
+payment, and everything downstream is identical.
+
+## Notes
+
+- **Geocoding is off by default.** Distance features work from coordinates people set
+  themselves. Switch the driver in Admin → Settings to change that.
+- **The postcode directory has no coordinates.** It fills city and state on address
+  forms; it does not place anyone on a map.
+- **Payouts are a ledger, not a payment rail.** The transfer is made by hand.
+- **Group classes need a price of their own.** Without one they inherit the
+  one-to-one rate, which is shown as inherited rather than hidden.
 
 ## License
 
