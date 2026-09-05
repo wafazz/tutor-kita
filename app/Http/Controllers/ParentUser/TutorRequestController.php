@@ -47,6 +47,21 @@ class TutorRequestController extends Controller
         ]);
     }
 
+    /**
+     * Whether a package may be requested for a subject.
+     *
+     * A package of type "all" covers everything; one of type "specific" covers
+     * exactly the subjects attached to it.
+     */
+    private function packageCovers(Package $package, int|string $subjectId): bool
+    {
+        if ($package->package_type !== 'specific') {
+            return true;
+        }
+
+        return $package->subjects->contains('id', (int) $subjectId);
+    }
+
     public function store(Request $request)
     {
         $validated = $request->validate([
@@ -105,6 +120,15 @@ class TutorRequestController extends Controller
 
         if (! $subjectId) {
             return redirect()->back()->withErrors(['subject_id' => 'Please select a subject.']);
+        }
+
+        // A package that names its subjects may only be requested for those
+        // subjects. The form limits the choice, but the form is not what
+        // enforces it — this is.
+        if (! $this->packageCovers($package, $subjectId)) {
+            return redirect()->back()->withErrors([
+                'subject_id' => "The {$package->name} package does not cover that subject.",
+            ]);
         }
 
         TutorRequest::create(array_merge($baseData, [

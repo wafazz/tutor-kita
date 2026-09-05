@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class TutorRequest extends Model
 {
     protected $fillable = [
-        'request_group', 'parent_id', 'student_id', 'subject_id', 'package_id', 'preferred_area', 'preferred_location',
+        'request_group', 'parent_id', 'student_id', 'subject_id', 'package_id', 'centre_id', 'preferred_area', 'preferred_location',
         'preferred_schedule', 'preferred_time', 'preferred_tutor_gender',
         'budget_min', 'budget_max', 'notes', 'status', 'matched_tutor_id', 'matched_at',
         'tutor_accepted', 'schedule_day', 'schedule_time', 'duration_hours', 'location_type', 'location_address',
@@ -132,5 +132,11 @@ class TutorRequest extends Model
             'tutor_payout' => round($amount - $commission, 2),
             'commission_rate' => $rate,
         ];
+    }
+
+    /** The centre a centre-based request is for. */
+    public function centre()
+    {
+        return $this->belongsTo(Centre::class);
     }
 }

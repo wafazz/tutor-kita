@@ -82,9 +82,11 @@ class TutorMatcher
         $mode = $request->deliveryMode();
 
         if ($mode === DeliveryMode::CentreGroup) {
-            $centre = Centre::where('is_active', true)
-                ->whereNotNull('latitude')
-                ->first();
+            // The centre this request is actually for. Falling back to whichever
+            // centre came first would measure a real distance to the wrong
+            // place, which reads as precision and is worse than admitting we
+            // do not know where the lesson is.
+            $centre = $request->centre;
 
             return [$centre?->latitude, $centre?->longitude];
         }
@@ -125,9 +127,11 @@ class TutorMatcher
         $detector = app(ScheduleConflictDetector::class);
         $mode = $request->deliveryMode();
 
-        $request->loadMissing(['subject', 'student']);
+        $request->loadMissing(['subject', 'student', 'centre', 'package']);
 
-        [$latitude, $longitude] = [$request->student?->latitude, $request->student?->longitude];
+        // The same origin rule as candidatesFor: whichever address the
+        // traveller is heading to, which for a centre group is that centre.
+        [$latitude, $longitude] = $this->originFor($request);
 
         return User::where('role', 'tutor')
             ->with(['tutorProfile'])
