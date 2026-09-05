@@ -114,17 +114,38 @@ class RequestController extends Controller
     {
         $tutorRequest->loadMissing('student');
 
-        $conflicts = app(ScheduleConflictDetector::class)->check(
-            tutorId: $tutor->id,
-            day: $tutorRequest->schedule_day,
-            time: $tutorRequest->schedule_time,
-            durationHours: (float) ($tutorRequest->duration_hours ?? $tutorRequest->package?->duration_hours ?? 1),
-            mode: $tutorRequest->deliveryMode(),
-            latitude: $tutorRequest->student?->latitude,
-            longitude: $tutorRequest->student?->longitude,
-        );
+        $detector = app(ScheduleConflictDetector::class);
 
-        return $conflicts->isEmpty() ? null : $conflicts->first()->message($tutor->name);
+        $day = $tutorRequest->schedule_day;
+        $time = $tutorRequest->schedule_time;
+        $hours = (float) ($tutorRequest->duration_hours ?? $tutorRequest->package?->duration_hours ?? 1);
+        $mode = $tutorRequest->deliveryMode();
+        $latitude = $tutorRequest->student?->latitude;
+        $longitude = $tutorRequest->student?->longitude;
+
+        $tutorClash = $detector->check(
+            tutorId: $tutor->id, day: $day, time: $time, durationHours: $hours,
+            mode: $mode, latitude: $latitude, longitude: $longitude,
+        )->first();
+
+        if ($tutorClash) {
+            return $tutorClash->message($tutor->name);
+        }
+
+        // The student has a diary too — assigning a free tutor into a slot the
+        // student is already busy in is the same mistake from the other side.
+        if ($tutorRequest->student) {
+            $studentClash = $detector->checkStudent(
+                studentId: $tutorRequest->student->id, day: $day, time: $time,
+                durationHours: $hours, mode: $mode, latitude: $latitude, longitude: $longitude,
+            )->first();
+
+            if ($studentClash) {
+                return $studentClash->message($tutorRequest->student->name);
+            }
+        }
+
+        return null;
     }
 
     /**

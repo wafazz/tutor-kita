@@ -37,6 +37,22 @@ class ClassEnroller
                 throw new \RuntimeException("{$student->name} is already enrolled in this class.");
             }
 
+            // A student can be double-booked exactly as a tutor can, and one of
+            // their own lessons is no less of a clash than someone else's.
+            $clash = app(ScheduleConflictDetector::class)->checkStudent(
+                studentId: $student->id,
+                day: $class->schedule_day,
+                time: $class->schedule_time,
+                durationHours: (float) $class->duration_hours,
+                mode: $class->delivery_mode,
+                latitude: $class->centre?->latitude,
+                longitude: $class->centre?->longitude,
+            )->first();
+
+            if ($clash) {
+                throw new \RuntimeException($clash->message($student->name));
+            }
+
             $price = $class->priceForStudent();
 
             $payment = Payment::create([

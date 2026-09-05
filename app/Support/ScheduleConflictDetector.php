@@ -49,7 +49,52 @@ class ScheduleConflictDetector
         $start = $this->minutes($time);
         $end = $start + (int) round($durationHours * 60);
 
-        return $this->commitments($tutorId, $day, $ignoreClassId, $ignoreBookingId)
+        return $this->compare(
+            $this->tutorCommitments($tutorId, $day, $ignoreClassId, $ignoreBookingId),
+            $start, $end, $mode, $latitude, $longitude
+        );
+    }
+
+    /**
+     * Whether a student can take a proposed slot.
+     *
+     * A student can be double-booked exactly as a tutor can — and a seat in a
+     * group class is one of their bookings, so both kinds of commitment are
+     * already here.
+     */
+    public function checkStudent(
+        int $studentId,
+        ?string $day,
+        ?string $time,
+        float $durationHours,
+        DeliveryMode $mode,
+        ?float $latitude = null,
+        ?float $longitude = null,
+        ?int $ignoreBookingId = null,
+    ): Collection {
+        if (blank($day) || blank($time)) {
+            return collect();
+        }
+
+        $start = $this->minutes($time);
+        $end = $start + (int) round($durationHours * 60);
+
+        return $this->compare(
+            $this->studentCommitments($studentId, $day, $ignoreBookingId),
+            $start, $end, $mode, $latitude, $longitude
+        );
+    }
+
+    /** @param  Collection<int, array>  $commitments */
+    private function compare(
+        Collection $commitments,
+        int $start,
+        int $end,
+        DeliveryMode $mode,
+        ?float $latitude,
+        ?float $longitude
+    ): Collection {
+        return $commitments
             ->map(function (array $other) use ($start, $end, $mode, $latitude, $longitude) {
                 $range = $this->range($other['start'], $other['end']);
 
@@ -83,29 +128,30 @@ class ScheduleConflictDetector
             ->values();
     }
 
+    /** Everything the student is already committed to on that day. */
+    private function studentCommitments(int $studentId, string $day, ?int $ignoreBookingId): Collection
+    {
+        return Booking::where('student_id', $studentId)
+            ->where('schedule_day', $day)
+            ->whereNotIn('status', ['cancelled', 'completed'])
+            ->when($ignoreBookingId, fn ($q) => $q->whereKeyNot($ignoreBookingId))
+            ->with(['student:id,name,latitude,longitude', 'subject:id,name', 'tutor.tutorProfile', 'classEnrolment.classSession.centre'])
+            ->get()
+            ->map(fn (Booking $b) => $this->describe($b))
+            ->sortBy('start')
+            ->values();
+    }
+
     /** Everything the tutor is already committed to on that day. */
-    private function commitments(int $tutorId, string $day, ?int $ignoreClassId, ?int $ignoreBookingId): Collection
+    private function tutorCommitments(int $tutorId, string $day, ?int $ignoreClassId, ?int $ignoreBookingId): Collection
     {
         $bookings = Booking::where('tutor_id', $tutorId)
             ->where('schedule_day', $day)
             ->whereNotIn('status', ['cancelled', 'completed'])
             ->when($ignoreBookingId, fn ($q) => $q->whereKeyNot($ignoreBookingId))
-            ->with(['student:id,name,latitude,longitude', 'subject:id,name', 'tutor.tutorProfile'])
+            ->with(['student:id,name,latitude,longitude', 'subject:id,name', 'tutor.tutorProfile', 'classEnrolment.classSession.centre'])
             ->get()
-            ->map(function (Booking $b) {
-                $start = $this->minutes((string) $b->schedule_time);
-                $mode = $b->delivery_mode ? DeliveryMode::from($b->delivery_mode) : DeliveryMode::HomeStudent;
-                [$lat, $lng] = $this->placeOf($mode, $b->student, $b->tutor?->tutorProfile, null);
-
-                return [
-                    'what' => $b->subject?->name ? "a {$b->subject->name} lesson" : 'a lesson',
-                    'start' => $start,
-                    'end' => $start + (int) round((float) $b->duration_hours * 60),
-                    'mode' => $mode,
-                    'latitude' => $lat,
-                    'longitude' => $lng,
-                ];
-            });
+            ->map(fn (Booking $b) => $this->describe($b));
 
         $classes = ClassSession::where('tutor_id', $tutorId)
             ->where('schedule_day', $day)
@@ -127,6 +173,27 @@ class ScheduleConflictDetector
             });
 
         return $bookings->concat($classes)->sortBy('start')->values();
+    }
+
+    /** One booking, as a commitment to compare against. */
+    private function describe(Booking $b): array
+    {
+        $start = $this->minutes((string) $b->schedule_time);
+        $mode = $b->delivery_mode ? DeliveryMode::from($b->delivery_mode) : DeliveryMode::HomeStudent;
+        $class = $b->classEnrolment?->classSession;
+
+        [$lat, $lng] = $this->placeOf($mode, $b->student, $b->tutor?->tutorProfile, $class?->centre);
+
+        return [
+            'what' => $class
+                ? "'".($class->title ?? $class->subject?->name ?? 'a group class')."'"
+                : ($b->subject?->name ? "a {$b->subject->name} lesson" : 'a lesson'),
+            'start' => $start,
+            'end' => $start + (int) round((float) $b->duration_hours * 60),
+            'mode' => $mode,
+            'latitude' => $lat,
+            'longitude' => $lng,
+        ];
     }
 
     /** Where a commitment physically happens, per who travels. */
