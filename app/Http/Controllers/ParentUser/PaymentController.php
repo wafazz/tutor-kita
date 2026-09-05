@@ -79,7 +79,7 @@ class PaymentController extends Controller
             'description' => 'TutorHUB payment #'.$payment->id,
             'reference' => 'TH-'.$payment->id,
             'callbackUrl' => route('payments.billplz.webhook'),
-            'redirectUrl' => route('parent.payments.return'),
+            'redirectUrl' => route('payments.return'),
         ]);
 
         if (! $bill) {
@@ -168,17 +168,14 @@ class PaymentController extends Controller
 
         $payment = $billId ? Payment::where('transaction_id', $billId)->first() : null;
 
-        if (! $payment || $payment->parent_id !== auth()->id()) {
-            return redirect()->route('parent.payments.index');
+        if (! $payment) {
+            return redirect()->route('login')->with('error', 'That payment could not be found.');
         }
 
-        if ($payment->status === 'success') {
-            return $this->completedRedirect($payment);
-        }
-
-        // The webhook may simply not have landed yet. A signed redirect is a
-        // reason to ask Billplz, never a reason to believe the browser.
-        if ($billplz->redirectSignatureIsValid($params)) {
+        // The webhook is what settles a payment. This only reports, so a signed
+        // redirect for a payment still marked pending is a reason to ask
+        // Billplz directly, never a reason to believe the browser.
+        if ($payment->status !== 'success' && $billplz->redirectSignatureIsValid($params)) {
             $bill = $billplz->fetchBill($billId);
 
             if ($bill && filter_var($bill['paid'] ?? false, FILTER_VALIDATE_BOOLEAN)) {
@@ -189,12 +186,23 @@ class PaymentController extends Controller
                     'paid_at' => now(),
                 ]);
 
-                return $this->completePayment($payment);
+                app(PaymentCompletion::class)->complete($payment->fresh());
             }
         }
 
-        return redirect()->route('parent.payments.show', $payment->id)
-            ->with('info', 'We are confirming your payment with the bank. This page will show it as paid once confirmed.');
+        $payment->refresh();
+
+        // The payer comes back from another site, so their session may or may
+        // not have survived. Someone signed in as the payer goes straight to
+        // the right page; anyone else is sent to sign in rather than being
+        // shown a bare 403 for a payment that succeeded.
+        if (auth()->check() && auth()->id() === $payment->parent_id) {
+            return $this->completedRedirect($payment);
+        }
+
+        return redirect()->route('login')->with('status', $payment->status === 'success'
+            ? 'Your payment was received. Sign in to see the booking.'
+            : 'We are still confirming your payment with the bank. Sign in shortly to check.');
     }
 
     /** Where to send someone whose payment is already settled. */

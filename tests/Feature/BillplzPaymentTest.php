@@ -231,4 +231,44 @@ class BillplzPaymentTest extends TestCase
         $tampered = ['id' => 'y', 'paid' => 'true', 'x_signature' => $valid['x_signature']];
         $this->assertFalse($billplz->webhookSignatureIsValid($tampered));
     }
+
+    // ---- coming back from the gateway ----
+
+    public function test_the_return_page_does_not_depend_on_being_signed_in(): void
+    {
+        $payment = $this->pendingPayment();
+        $payment->update(['status' => 'success', 'paid_at' => now()]);
+
+        // The payer returns from another site, so their session may not have
+        // survived. A completed payment must not greet them with a 403.
+        $this->get('/payments/return?billplz[id]=bill_abc&billplz[paid]=true')
+            ->assertRedirect(route('login'));
+    }
+
+    public function test_the_owner_is_taken_straight_to_their_payment(): void
+    {
+        $payment = $this->pendingPayment();
+        $payment->update(['status' => 'success', 'paid_at' => now()]);
+
+        $this->actingAs($this->parent)
+            ->get('/payments/return?billplz[id]=bill_abc&billplz[paid]=true')
+            ->assertRedirect(route('parent.payments.show', $payment->id));
+    }
+
+    public function test_the_return_page_alone_never_settles_a_payment(): void
+    {
+        $payment = $this->pendingPayment();
+
+        // Unsigned, and claiming success.
+        $this->actingAs($this->parent)
+            ->get('/payments/return?billplz[id]=bill_abc&billplz[paid]=true');
+
+        $this->assertSame('pending', $payment->fresh()->status);
+    }
+
+    public function test_an_unknown_bill_is_turned_away_quietly(): void
+    {
+        $this->get('/payments/return?billplz[id]=nobody')
+            ->assertRedirect(route('login'));
+    }
 }

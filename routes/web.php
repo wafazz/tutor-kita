@@ -47,6 +47,14 @@ Route::get('/', function () {
 
 Route::get('/tutors', TutorBrowseController::class)->name('tutors.browse');
 
+// Where Billplz sends the payer back. Deliberately outside auth: the payer
+// returns from another site, and whether their session survived that trip is
+// not something we control. It settles nothing — the webhook does that — so it
+// only has to report an outcome without turning a completed payment into a
+// 403.
+Route::get('/payments/return', [ParentPaymentController::class, 'paymentReturn'])
+    ->name('payments.return');
+
 // Billplz calls this server to server, so it cannot sit behind auth. The
 // X-Signature is what establishes that the message is genuine.
 Route::post('/payments/billplz/webhook', [ParentPaymentController::class, 'webhook'])
@@ -215,7 +223,6 @@ Route::middleware(['auth', 'verified', 'role:parent'])->prefix('parent')->name('
     Route::post('/sessions/{session}/confirm', [ParentSessionController::class, 'confirm'])->name('sessions.confirm');
 
     Route::get('/payments', [ParentPaymentController::class, 'index'])->name('payments.index');
-    Route::get('/payments/return', [ParentPaymentController::class, 'paymentReturn'])->name('payments.return');
     Route::get('/payments/{payment}', [ParentPaymentController::class, 'show'])->name('payments.show');
     Route::post('/payments/{payment}/pay', [ParentPaymentController::class, 'pay'])->name('payments.pay');
 
