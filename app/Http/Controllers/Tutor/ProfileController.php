@@ -57,6 +57,15 @@ class ProfileController extends Controller
                 ->toArray();
         }
 
+        // These columns are NOT NULL, and registration writes '' and 0 rather
+        // than null, so a cleared field has to become the same thing. Passing
+        // null instead fails on insert and the whole save is lost.
+        foreach (['location_area' => '', 'location_state' => '', 'hourly_rate' => 0, 'subjects' => []] as $field => $blank) {
+            if (array_key_exists($field, $validated) && $validated[$field] === null) {
+                $validated[$field] = $blank;
+            }
+        }
+
         $profile = $user->tutorProfile;
         $profile->update($validated);
 

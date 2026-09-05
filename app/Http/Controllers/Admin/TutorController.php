@@ -102,6 +102,12 @@ class TutorController extends Controller
             'commission_rate' => 'required|numeric|min:0|max:100',
         ]);
 
+        foreach (['location_area' => '', 'location_state' => '', 'hourly_rate' => 0, 'subjects' => []] as $field => $blank) {
+            if (array_key_exists($field, $validated) && $validated[$field] === null) {
+                $validated[$field] = $blank;
+            }
+        }
+
         $tutor->tutorProfile->update([
             'commission_rate' => $validated['commission_rate'],
         ]);

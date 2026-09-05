@@ -15,6 +15,18 @@ class CentreAdminTest extends TestCase
 {
     use RefreshDatabase;
 
+    private function tutorWithProfile(): User
+    {
+        $tutor = User::factory()->tutor()->create();
+        TutorProfile::create([
+            'user_id' => $tutor->id, 'subjects' => ['Maths'], 'hourly_rate' => 50,
+            'location_area' => 'PJ', 'location_state' => 'Sel',
+            'verification_status' => 'verified', 'commission_rate' => 20,
+        ]);
+
+        return $tutor->fresh();
+    }
+
     private function admin(): User
     {
         return User::factory()->admin()->create();
@@ -147,5 +159,23 @@ class CentreAdminTest extends TestCase
         $this->actingAs($tutor)->from('/tutor/profile')
             ->put('/tutor/profile', ['travel_radius_km' => 5000])
             ->assertSessionHasErrors('travel_radius_km');
+    }
+
+    public function test_a_tutor_can_clear_optional_profile_fields_without_a_500(): void
+    {
+        $tutor = $this->tutorWithProfile();
+
+        // These columns are NOT NULL while the form treats them as optional,
+        // so an emptied field used to lose the whole save.
+        $this->actingAs($tutor)->put('/tutor/profile', [
+            'location_area' => '', 'location_state' => '', 'hourly_rate' => '',
+            'bio' => 'Still here',
+        ])->assertSessionHasNoErrors();
+
+        $profile = $tutor->tutorProfile->fresh();
+
+        $this->assertSame('Still here', $profile->bio);
+        $this->assertSame('', $profile->location_area);
+        $this->assertEquals(0, (float) $profile->hourly_rate);
     }
 }
