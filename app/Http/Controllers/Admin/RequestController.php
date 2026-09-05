@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Payment;
+use App\Models\Setting;
 use App\Models\Subject;
 use App\Models\TutorRequest;
 use App\Models\User;
@@ -71,6 +72,11 @@ class RequestController extends Controller
             $allMatched = $group->every(fn ($r) => $r->status === 'matched');
 
             if ($allMatched) {
+                if ($unpriced = $this->firstUnpricedRequest($group)) {
+                    return redirect()->back()->with('error',
+                        "Assigned to {$tutor->name}, but no payment was raised: {$unpriced} Fix it, then re-assign a tutor to that subject.");
+                }
+
                 $this->createGroupPayment($group);
 
                 return redirect()->back()->with('success', "Assigned to {$tutor->name}. All subjects matched — payment pending from parent.");
@@ -82,48 +88,78 @@ class RequestController extends Controller
         }
 
         // Single request: create payment immediately
+        if ($unpriced = $this->firstUnpricedRequest(collect([$tutorRequest]))) {
+            return redirect()->back()->with('error',
+                "Assigned to {$tutor->name}, but no payment was raised: {$unpriced}");
+        }
+
         $this->createSinglePayment($tutorRequest, $tutor);
 
-        $amount = $this->calculateAmount($tutorRequest);
+        $amount = $tutorRequest->calculateAmount();
 
         return redirect()->back()->with('success', "Request assigned to {$tutor->name}. Payment of RM ".number_format($amount, 2).' pending from parent.');
     }
 
-    private function calculateAmount(TutorRequest $tutorRequest): float
+    /**
+     * Why a request cannot be priced, or null when it can.
+     *
+     * A zero price would bill the parent nothing and leave the tutor
+     * unpayable, with nothing on the record to show why — so approval stops
+     * here rather than raising a RM0 payment.
+     */
+    private function firstUnpricedRequest($requests): ?string
     {
-        $tutorRequest->load(['subject', 'package']);
-        $subject = $tutorRequest->subject;
-        $package = $tutorRequest->package;
-        if (! $subject || ! $package) {
-            return 0;
+        foreach ($requests as $request) {
+            $request->loadMissing(['subject', 'package']);
+
+            if (! $request->subject || ! $request->package) {
+                return "request #{$request->id} has no subject or package attached.";
+            }
+
+            if ($request->calculateAmount() <= 0) {
+                return "'{$request->subject->name}' priced at RM0 for this package — check the subject's hourly rate.";
+            }
         }
 
-        $location = $tutorRequest->preferred_location ?? 'home';
-        $rate = $location === 'online'
-            ? (float) $subject->hourly_rate_online
-            : (float) $subject->hourly_rate_home;
+        return null;
+    }
 
-        return $rate * (float) $package->duration_hours * $package->total_sessions;
+    /**
+     * Raise or re-price the pending payment for a request.
+     *
+     * updateOrCreate on its own would rewrite the amount of a payment the
+     * parent has already settled — re-approving a request would silently
+     * restate money that has been collected, and the pricing formula can
+     * legitimately differ from what an older payment recorded. Anything past
+     * 'pending' is therefore left exactly as it was charged.
+     */
+    private function upsertPendingPayment(int $tutorRequestId, array $attributes): void
+    {
+        $existing = Payment::where('tutor_request_id', $tutorRequestId)->first();
+
+        if ($existing && $existing->status !== 'pending') {
+            return;
+        }
+
+        Payment::updateOrCreate(['tutor_request_id' => $tutorRequestId], $attributes);
     }
 
     private function createSinglePayment(TutorRequest $tutorRequest, User $tutor): void
     {
-        $amount = $this->calculateAmount($tutorRequest);
-        $commissionRate = $tutor->tutorProfile?->commission_rate ?? 20;
+        $amount = $tutorRequest->calculateAmount();
+
+        $commissionRate = $tutor->tutorProfile?->commission_rate ?? Setting::defaultCommissionRate();
         $commissionAmount = $amount * ((float) $commissionRate / 100);
         $tutorPayout = $amount - $commissionAmount;
 
-        Payment::updateOrCreate(
-            ['tutor_request_id' => $tutorRequest->id],
-            [
-                'parent_id' => $tutorRequest->parent_id,
-                'amount' => $amount,
-                'commission_amount' => $commissionAmount,
-                'tutor_payout' => $tutorPayout,
-                'payment_method' => 'fpx',
-                'status' => 'pending',
-            ]
-        );
+        $this->upsertPendingPayment($tutorRequest->id, [
+            'parent_id' => $tutorRequest->parent_id,
+            'amount' => $amount,
+            'commission_amount' => $commissionAmount,
+            'tutor_payout' => $tutorPayout,
+            'payment_method' => 'fpx',
+            'status' => 'pending',
+        ]);
     }
 
     private function createGroupPayment($group): void
@@ -133,29 +169,26 @@ class RequestController extends Controller
 
         // Sum up price per subject based on its rate × package duration × sessions
         foreach ($group as $req) {
-            $totalAmount += $this->calculateAmount($req);
+            $totalAmount += $req->calculateAmount();
         }
 
         // Calculate commission across all tutors
         $totalCommission = 0;
         foreach ($group as $req) {
             $tutor = User::find($req->matched_tutor_id);
-            $rate = $tutor?->tutorProfile?->commission_rate ?? 20;
-            $reqAmount = $this->calculateAmount($req);
+            $rate = $tutor?->tutorProfile?->commission_rate ?? Setting::defaultCommissionRate();
+            $reqAmount = $req->calculateAmount();
             $totalCommission += $reqAmount * ((float) $rate / 100);
         }
         $tutorPayout = $totalAmount - $totalCommission;
 
-        Payment::updateOrCreate(
-            ['tutor_request_id' => $firstRequest->id],
-            [
-                'parent_id' => $firstRequest->parent_id,
-                'amount' => round($totalAmount, 2),
-                'commission_amount' => round($totalCommission, 2),
-                'tutor_payout' => round($tutorPayout, 2),
-                'payment_method' => 'fpx',
-                'status' => 'pending',
-            ]
-        );
+        $this->upsertPendingPayment($firstRequest->id, [
+            'parent_id' => $firstRequest->parent_id,
+            'amount' => round($totalAmount, 2),
+            'commission_amount' => round($totalCommission, 2),
+            'tutor_payout' => round($tutorPayout, 2),
+            'payment_method' => 'fpx',
+            'status' => 'pending',
+        ]);
     }
 }

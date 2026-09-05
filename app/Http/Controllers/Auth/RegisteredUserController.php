@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\Setting;
 use App\Models\TutorProfile;
 use App\Models\User;
 use Illuminate\Auth\Events\Registered;
@@ -89,6 +90,9 @@ class RegisteredUserController extends Controller
             'hourly_rate' => 0,
             'location_area' => '',
             'location_state' => '',
+            // New tutors start on the platform default; admins can override
+            // it per tutor afterwards.
+            'commission_rate' => Setting::defaultCommissionRate(),
         ]);
 
         event(new Registered($user));
@@ -124,6 +128,7 @@ class RegisteredUserController extends Controller
                 'hourly_rate' => 0,
                 'location_area' => '',
                 'location_state' => '',
+                'commission_rate' => Setting::defaultCommissionRate(),
             ]);
         }
 

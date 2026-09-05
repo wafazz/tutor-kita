@@ -197,7 +197,7 @@ class PaymentController extends Controller
                 'location_type' => $req->location_type,
                 'location_address' => $req->location_address,
                 'hourly_rate' => $tutorProfile?->hourly_rate ?? 0,
-                'commission_rate' => $tutorProfile?->commission_rate ?? 20,
+                'commission_rate' => $tutorProfile?->commission_rate ?? Setting::defaultCommissionRate(),
                 'status' => 'confirmed',
             ]);
 

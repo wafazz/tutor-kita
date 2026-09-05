@@ -80,9 +80,15 @@ class TutorRequest extends Model
             return 0.0;
         }
 
+        $homeRate = (float) $subject->hourly_rate_home;
+        $onlineRate = (float) $subject->hourly_rate_online;
+
+        // An unset online rate must not price the booking at zero — that would
+        // charge the parent nothing and earn the tutor nothing. Fall back to
+        // the home rate until a real online rate is configured.
         $rate = ($this->preferred_location ?? 'home') === 'online'
-            ? (float) $subject->hourly_rate_online
-            : (float) $subject->hourly_rate_home;
+            ? ($onlineRate > 0 ? $onlineRate : $homeRate)
+            : $homeRate;
 
         return $rate * (float) $package->duration_hours * (int) $package->total_sessions;
     }
@@ -97,7 +103,7 @@ class TutorRequest extends Model
         $tutor ??= $this->matchedTutor;
 
         $amount = $this->calculateAmount();
-        $rate = (float) ($tutor?->tutorProfile?->commission_rate ?? 20);
+        $rate = (float) ($tutor?->tutorProfile?->commission_rate ?? Setting::defaultCommissionRate());
         $commission = round($amount * ($rate / 100), 2);
 
         return [
