@@ -6,10 +6,9 @@ use App\Http\Controllers\Controller;
 use App\Models\Booking;
 use App\Models\Payment;
 use App\Models\TutorSession;
-use Carbon\Carbon;
+use App\Support\SessionScheduler;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Str;
 use Inertia\Inertia;
 
 class SessionController extends Controller
@@ -158,49 +157,28 @@ class SessionController extends Controller
         return back()->with('success', "Checked out. Duration: {$duration} minutes.");
     }
 
+    /**
+     * Top a booking up to the sessions its package promises.
+     *
+     * Sessions are now laid out when the booking is created, so this is a
+     * repair for bookings that predate that, or an extension when a package
+     * grows. It counts what already exists, so pressing it twice is harmless.
+     */
     public function generateSessions(Request $request, Booking $booking)
     {
         abort_unless($booking->tutor_id === auth()->id(), 403);
-        abort_unless(in_array($booking->status, ['confirmed', 'active']), 403);
 
-        $tutorRequest = $booking->tutorRequest;
-        $totalSessions = $tutorRequest?->package?->total_sessions ?? 4;
-        $existingCount = $booking->sessions()->count();
-        $remaining = $totalSessions - $existingCount;
+        $scheduler = app(SessionScheduler::class);
+        $target = $scheduler->targetFor($booking);
 
-        if ($remaining <= 0) {
-            return back()->with('error', 'All sessions already generated for this package.');
+        if (blank($booking->schedule_day)) {
+            return back()->with('error', 'This booking has no weekly schedule, so sessions cannot be laid out.');
         }
 
-        $dayMap = ['sunday' => 0, 'monday' => 1, 'tuesday' => 2, 'wednesday' => 3, 'thursday' => 4, 'friday' => 5, 'saturday' => 6];
-        $targetDay = $dayMap[strtolower($booking->schedule_day)] ?? null;
+        $created = $scheduler->ensure($booking, $target);
 
-        if ($targetDay === null) {
-            return back()->with('error', 'Invalid schedule day on booking.');
-        }
-
-        $startDate = Carbon::now()->next($targetDay);
-        $existingDates = $booking->sessions()->pluck('session_date')->map(fn ($d) => $d->format('Y-m-d'))->toArray();
-        $created = 0;
-        $week = 0;
-
-        while ($created < $remaining) {
-            $date = $startDate->copy()->addWeeks($week);
-            $week++;
-            if (in_array($date->format('Y-m-d'), $existingDates)) {
-                continue;
-            }
-
-            TutorSession::create([
-                'booking_id' => $booking->id,
-                'session_date' => $date,
-                'start_time' => $booking->schedule_time,
-                'check_in_token' => Str::uuid()->toString(),
-                'status' => 'scheduled',
-            ]);
-            $created++;
-        }
-
-        return back()->with('success', "{$created} session(s) generated. Total: {$totalSessions} sessions for this package.");
+        return back()->with('success', $created === 0
+            ? "All {$target} session(s) for this booking already exist."
+            : "{$created} session(s) generated. This booking now has {$target} in total.");
     }
 }
