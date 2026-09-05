@@ -25,4 +25,13 @@ class TutorPayout extends Model
     {
         return $this->belongsTo(User::class, 'tutor_id');
     }
+
+    /**
+     * The bookings this payout settles. Claimed at creation so no other
+     * payout run can pick them up again.
+     */
+    public function bookings()
+    {
+        return $this->hasMany(Booking::class, 'tutor_payout_id');
+    }
 }

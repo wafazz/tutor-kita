@@ -7,6 +7,7 @@ use App\Models\Booking;
 use App\Models\TutorPayout;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 
 class PayoutController extends Controller
@@ -24,6 +25,7 @@ class PayoutController extends Controller
     private function payableBookings(int $tutorId, ?string $periodStart = null, ?string $periodEnd = null)
     {
         return Booking::where('tutor_id', $tutorId)
+            ->whereNull('tutor_payout_id')
             ->whereHas('payment', fn ($q) => $q->where('status', 'success'))
             ->when(
                 $periodStart && $periodEnd,
@@ -63,16 +65,14 @@ class PayoutController extends Controller
             ->whereHas('tutorProfile', fn ($q) => $q->where('verification_status', 'verified'))
             ->get()
             ->map(function ($tutor) {
-                $earned = (float) $this->payableBookings($tutor->id)->sum('tutor_payout');
-
-                // Everything already committed to a payout, in any state.
-                $alreadyPaidOut = (float) TutorPayout::where('tutor_id', $tutor->id)->sum('amount');
+                // Bookings not yet claimed by any payout run.
+                $unpaid = (float) $this->payableBookings($tutor->id)->sum('tutor_payout');
 
                 return [
                     'id' => $tutor->id,
                     'name' => $tutor->name,
                     'email' => $tutor->email,
-                    'unpaid_amount' => round(max(0, $earned - $alreadyPaidOut), 2),
+                    'unpaid_amount' => round($unpaid, 2),
                 ];
             })
             ->filter(fn ($t) => $t['unpaid_amount'] > 0)
@@ -91,38 +91,55 @@ class PayoutController extends Controller
             'period_end' => 'required|date|after_or_equal:period_start',
         ]);
 
-        $bookings = $this->payableBookings(
-            (int) $request->tutor_id,
-            $request->period_start,
-            $request->period_end
-        )->with(['sessions' => fn ($q) => $q->whereBetween('session_date', [$request->period_start, $request->period_end])])
-            ->get();
+        // Select and claim under one transaction so two concurrent runs cannot
+        // both pick up the same bookings.
+        $result = DB::transaction(function () use ($request) {
+            $bookings = $this->payableBookings(
+                (int) $request->tutor_id,
+                $request->period_start,
+                $request->period_end
+            )
+                ->with(['sessions' => fn ($q) => $q->whereBetween('session_date', [$request->period_start, $request->period_end])])
+                ->lockForUpdate()
+                ->get();
 
-        $amount = round((float) $bookings->sum('tutor_payout'), 2);
-        $sessionsCount = $bookings->sum(fn ($b) => $b->sessions->count());
+            if ($bookings->isEmpty()) {
+                return null;
+            }
 
-        if ($amount <= 0) {
-            return back()->with('error', 'No payable sessions found for this period.');
+            $amount = round((float) $bookings->sum('tutor_payout'), 2);
+
+            $payout = TutorPayout::create([
+                'tutor_id' => $request->tutor_id,
+                'amount' => $amount,
+                'sessions_count' => $bookings->sum(fn ($b) => $b->sessions->count()),
+                'period_start' => $request->period_start,
+                'period_end' => $request->period_end,
+                'status' => 'pending',
+            ]);
+
+            // Claim them: no later run can pay these bookings again.
+            Booking::whereIn('id', $bookings->pluck('id'))
+                ->update(['tutor_payout_id' => $payout->id]);
+
+            return $payout;
+        });
+
+        if (! $result) {
+            return back()->with('error', 'No unpaid sessions found for this tutor in this period.');
         }
 
-        TutorPayout::create([
-            'tutor_id' => $request->tutor_id,
-            'amount' => $amount,
-            'sessions_count' => $sessionsCount,
-            'period_start' => $request->period_start,
-            'period_end' => $request->period_end,
-            'status' => 'pending',
-        ]);
-
         return redirect()->route('admin.payouts.index')
-            ->with('success', "Payout of RM {$amount} created for {$sessionsCount} session(s).");
+            ->with('success', "Payout of RM {$result->amount} created for {$result->sessions_count} session(s).");
     }
 
     public function show(TutorPayout $payout)
     {
         $payout->load('tutor');
 
-        $bookings = $this->payableBookings($payout->tutor_id, $payout->period_start, $payout->period_end)
+        // The bookings this payout actually claimed — a historical record, not
+        // re-derived from the period, so it stays accurate as data changes.
+        $bookings = $payout->bookings()
             ->with([
                 'student:id,name',
                 'subject:id,name',

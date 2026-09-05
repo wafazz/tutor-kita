@@ -9,7 +9,7 @@ class Booking extends Model
     protected $fillable = [
         'tutor_request_id', 'tutor_id', 'parent_id', 'student_id', 'subject_id',
         'schedule_day', 'schedule_time', 'duration_hours', 'hourly_rate', 'commission_rate',
-        'amount', 'commission_amount', 'tutor_payout', 'payment_id',
+        'amount', 'commission_amount', 'tutor_payout', 'payment_id', 'tutor_payout_id',
         'location_type', 'location_address', 'status', 'notes',
     ];
 
@@ -72,5 +72,13 @@ class Booking extends Model
     public function payment()
     {
         return $this->belongsTo(Payment::class);
+    }
+
+    /**
+     * The payout run that has committed to paying this booking, if any.
+     */
+    public function tutorPayout()
+    {
+        return $this->belongsTo(TutorPayout::class, 'tutor_payout_id');
     }
 }
