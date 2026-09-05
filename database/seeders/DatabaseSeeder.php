@@ -72,19 +72,22 @@ class DatabaseSeeder extends Seeder
         ]);
 
         // Subjects
+        // hourly_rate was renamed to hourly_rate_home; the online rate is
+        // 80% of it, rounded to the nearest RM5. Seeding a zero online rate
+        // would price every online booking at nothing.
         $subjects = [
-            ['name' => 'Mathematics', 'category' => 'academic', 'education_level' => 'SPM', 'hourly_rate' => 45.00],
-            ['name' => 'Additional Mathematics', 'category' => 'academic', 'education_level' => 'SPM', 'hourly_rate' => 55.00],
-            ['name' => 'Science', 'category' => 'academic', 'education_level' => 'SPM', 'hourly_rate' => 40.00],
-            ['name' => 'Physics', 'category' => 'academic', 'education_level' => 'SPM', 'hourly_rate' => 50.00],
-            ['name' => 'Chemistry', 'category' => 'academic', 'education_level' => 'SPM', 'hourly_rate' => 50.00],
-            ['name' => 'Biology', 'category' => 'academic', 'education_level' => 'SPM', 'hourly_rate' => 45.00],
-            ['name' => 'Bahasa Melayu', 'category' => 'language', 'education_level' => 'SPM', 'hourly_rate' => 35.00],
-            ['name' => 'English', 'category' => 'language', 'education_level' => 'SPM', 'hourly_rate' => 40.00],
-            ['name' => 'Al-Quran', 'category' => 'quran', 'education_level' => 'All', 'hourly_rate' => 30.00],
-            ['name' => 'Tajweed', 'category' => 'quran', 'education_level' => 'All', 'hourly_rate' => 30.00],
-            ['name' => 'Piano', 'category' => 'music', 'education_level' => 'All', 'hourly_rate' => 80.00],
-            ['name' => 'Guitar', 'category' => 'music', 'education_level' => 'All', 'hourly_rate' => 60.00],
+            ['name' => 'Mathematics', 'category' => 'academic', 'education_level' => 'SPM', 'hourly_rate_home' => 45.00, 'hourly_rate_online' => 35.00],
+            ['name' => 'Additional Mathematics', 'category' => 'academic', 'education_level' => 'SPM', 'hourly_rate_home' => 55.00, 'hourly_rate_online' => 45.00],
+            ['name' => 'Science', 'category' => 'academic', 'education_level' => 'SPM', 'hourly_rate_home' => 40.00, 'hourly_rate_online' => 30.00],
+            ['name' => 'Physics', 'category' => 'academic', 'education_level' => 'SPM', 'hourly_rate_home' => 50.00, 'hourly_rate_online' => 40.00],
+            ['name' => 'Chemistry', 'category' => 'academic', 'education_level' => 'SPM', 'hourly_rate_home' => 50.00, 'hourly_rate_online' => 40.00],
+            ['name' => 'Biology', 'category' => 'academic', 'education_level' => 'SPM', 'hourly_rate_home' => 45.00, 'hourly_rate_online' => 35.00],
+            ['name' => 'Bahasa Melayu', 'category' => 'language', 'education_level' => 'SPM', 'hourly_rate_home' => 35.00, 'hourly_rate_online' => 30.00],
+            ['name' => 'English', 'category' => 'language', 'education_level' => 'SPM', 'hourly_rate_home' => 40.00, 'hourly_rate_online' => 30.00],
+            ['name' => 'Al-Quran', 'category' => 'quran', 'education_level' => 'All', 'hourly_rate_home' => 30.00, 'hourly_rate_online' => 25.00],
+            ['name' => 'Tajweed', 'category' => 'quran', 'education_level' => 'All', 'hourly_rate_home' => 30.00, 'hourly_rate_online' => 25.00],
+            ['name' => 'Piano', 'category' => 'music', 'education_level' => 'All', 'hourly_rate_home' => 80.00, 'hourly_rate_online' => 65.00],
+            ['name' => 'Guitar', 'category' => 'music', 'education_level' => 'All', 'hourly_rate_home' => 60.00, 'hourly_rate_online' => 50.00],
         ];
 
         foreach ($subjects as $subject) {
