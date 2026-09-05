@@ -8,7 +8,7 @@ class Package extends Model
 {
     protected $fillable = [
         'name', 'package_type', 'description', 'total_sessions', 'duration_hours',
-        'price', 'is_active', 'sort_order',
+        'price', 'payout_policy', 'is_active', 'sort_order',
     ];
 
     protected function casts(): array

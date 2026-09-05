@@ -15,6 +15,7 @@ type PackageItem = {
     total_sessions: number;
     duration_hours: number;
     price: number;
+    payout_policy: 'upfront' | 'per_session' | 'on_completion';
     is_active: boolean;
     sort_order: number;
     subjects: SubjectItem[];
@@ -34,6 +35,7 @@ function PackageForm({ pkg, subjects, onClose }: { pkg?: PackageItem; subjects: 
         total_sessions: pkg?.total_sessions ?? 4,
         duration_hours: pkg?.duration_hours ?? 1,
         price: pkg?.price ?? 0,
+        payout_policy: pkg?.payout_policy ?? 'per_session',
         is_active: pkg?.is_active ?? true,
         sort_order: pkg?.sort_order ?? 0,
     });
@@ -159,6 +161,26 @@ function PackageForm({ pkg, subjects, onClose }: { pkg?: PackageItem; subjects: 
                             required
                         />
                         {errors.price && <p className="mt-1 text-sm text-red-600">{errors.price}</p>}
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700">Tutor payout</label>
+                        <select
+                            value={data.payout_policy}
+                            onChange={(e) => setData('payout_policy', e.target.value as typeof data.payout_policy)}
+                            className="mt-1 block w-full rounded-lg border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                            required
+                        >
+                            <option value="per_session">Per completed session (pro-rata)</option>
+                            <option value="on_completion">On package completion</option>
+                            <option value="upfront">Upfront, on payment received</option>
+                        </select>
+                        <p className="mt-1 text-xs text-gray-500">
+                            {data.payout_policy === 'per_session' && 'Each completed session releases its share of the tutor payout.'}
+                            {data.payout_policy === 'on_completion' && 'Nothing is payable until every session is delivered.'}
+                            {data.payout_policy === 'upfront' && 'The full payout is available as soon as the parent pays.'}
+                        </p>
+                        {errors.payout_policy && <p className="mt-1 text-sm text-red-600">{errors.payout_policy}</p>}
                     </div>
 
                     <div>

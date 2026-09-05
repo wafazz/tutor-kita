@@ -29,6 +29,7 @@ class PackageController extends Controller
             'total_sessions' => 'required|integer|min:1',
             'duration_hours' => 'required|numeric|min:0.5|max:8',
             'price' => 'required|numeric|min:0',
+            'payout_policy' => 'required|in:upfront,per_session,on_completion',
             'is_active' => 'boolean',
             'sort_order' => 'integer|min:0',
         ]);
@@ -56,6 +57,7 @@ class PackageController extends Controller
             'total_sessions' => 'required|integer|min:1',
             'duration_hours' => 'required|numeric|min:0.5|max:8',
             'price' => 'required|numeric|min:0',
+            'payout_policy' => 'required|in:upfront,per_session,on_completion',
             'is_active' => 'boolean',
             'sort_order' => 'integer|min:0',
         ]);
